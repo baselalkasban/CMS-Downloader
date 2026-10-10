@@ -30,8 +30,10 @@
   function currentCourse() {
     const id = currentCourseId();
     if (!id) return null;
-    const onPage = coursesOnPage();
-    return onPage[id] || courseMap[id] || null;
+    const label = document.querySelector('[id$="LabelCourseName"]');
+    const fromLabel = label && N.parseCourse(label.textContent);
+    if (fromLabel) return fromLabel;
+    return coursesOnPage()[id] || courseMap[id] || null;
   }
 
   function isDownloadLink(a) {
@@ -74,14 +76,19 @@
     true
   );
 
+  // Download links in the weeks currently shown (respects the CMS week/tag filters).
+  function visibleDownloadLinks() {
+    const links = [...document.querySelectorAll('a')].filter((a) => isDownloadLink(a) && a.getClientRects().length);
+    return [...new Map(links.map((a) => [N.urlKey(a.href), a])).values()];
+  }
+
   function addDownloadAllButton() {
-    const links = [...document.querySelectorAll('a')].filter(isDownloadLink);
-    const unique = [...new Map(links.map((a) => [N.urlKey(a.href), a])).values()];
-    if (!unique.length) return;
+    if (!visibleDownloadLinks().length) return;
 
     const btn = document.createElement('button');
-    btn.textContent = `Download all (${unique.length})`;
-    btn.title = 'Download every file on this course page into its course folder';
+    const label = () => `Download all (${visibleDownloadLinks().length})`;
+    btn.textContent = label();
+    btn.title = 'Download every file shown on this page into its course folder';
     Object.assign(btn.style, {
       position: 'fixed',
       right: '20px',
@@ -96,11 +103,21 @@
       cursor: 'pointer',
       boxShadow: '0 2px 8px rgba(0,0,0,.35)',
     });
-    btn.addEventListener('click', () => {
-      if (!confirm(`Download ${unique.length} files from this course?`)) return;
-      const items = unique.map((a) => ({ url: a.href, filename: pathFor(a) }));
-      chrome.runtime.sendMessage({ type: 'downloadAll', items });
+    btn.addEventListener('click', async () => {
+      const links = visibleDownloadLinks();
+      if (!links.length || !confirm(`Download ${links.length} files from this course?`)) return;
+      btn.disabled = true;
+      // Click the real buttons so the CMS login is reused and items get marked as seen.
+      for (let i = 0; i < links.length; i++) {
+        btn.textContent = `Downloading ${i + 1}/${links.length}...`;
+        links[i].click();
+        await new Promise((r) => setTimeout(r, 700));
+      }
+      btn.disabled = false;
+      btn.textContent = label();
     });
+    // Keep the count in sync with the CMS filters.
+    document.addEventListener('click', () => setTimeout(() => !btn.disabled && (btn.textContent = label()), 300));
     document.body.appendChild(btn);
   }
 

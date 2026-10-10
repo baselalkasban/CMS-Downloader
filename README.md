@@ -15,7 +15,9 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
       ├── Digital System Design/
       └── Data Base I/
   ```
-- Adds a **Download all** button to every course page, which downloads every file on the page into that course's folder.
+- Adds a **Download all** button to every course page. It clicks every *Download Content* button
+  in the weeks currently shown (so it follows the CMS week/tag filters), and the files are marked as seen on the CMS.
+  The first time, Chrome asks to allow *multiple downloads* from cms.guc.edu.eg; click **Allow**.
 
 ## Install
 1. Download this repository (green **Code** button → *Download ZIP*) and unzip it.

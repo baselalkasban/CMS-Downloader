@@ -65,19 +65,6 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
   return true; // suggest is called asynchronously
 });
 
-async function downloadAll(items) {
-  for (const { url, filename } of items) {
-    register(url, filename);
-    try {
-      await chrome.downloads.download({ url, filename, conflictAction: 'uniquify' });
-    } catch (err) {
-      console.warn('CMS Downloader: failed to download', url, err);
-    }
-    await new Promise((r) => setTimeout(r, 300));
-  }
-}
-
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === 'register') register(msg.url, msg.filename);
-  else if (msg?.type === 'downloadAll') downloadAll(msg.items || []);
 });
