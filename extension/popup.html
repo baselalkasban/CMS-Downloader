@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 300px; margin: 0; padding: 14px; font: 13px system-ui, sans-serif; background: #1f1f1f; color: #eee; }
+    h1 { font-size: 15px; margin: 0 0 12px; }
+    label { display: block; margin: 10px 0 4px; }
+    input[type=text] { width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid #555; border-radius: 4px; background: #2a2a2a; color: #eee; }
+    .check { display: flex; gap: 6px; align-items: center; }
+    .hint { color: #999; font-size: 11px; margin-top: 4px; }
+    .preview { margin-top: 12px; padding: 8px; background: #2a2a2a; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; }
+    #saved { color: #4ade80; font-size: 11px; height: 14px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>GUC CMS Downloader</h1>
+  <label for="baseFolder">Folder inside Downloads</label>
+  <input type="text" id="baseFolder" placeholder="CMS Pro" />
+  <div class="hint">Use "/" for subfolders, e.g. CMS Pro/SEM 5. Leave empty to save straight into Downloads.</div>
+  <label class="check"><input type="checkbox" id="keepCourseCode" /> Keep course code in folder name</label>
+  <label class="check"><input type="checkbox" id="keepItemNumber" /> Keep item number in file name</label>
+  <div class="preview" id="preview"></div>
+  <div id="saved"></div>
+  <script src="lib/naming.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
