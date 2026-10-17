@@ -25,6 +25,9 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
 3. Click **Load unpacked** and select the `extension` folder.
 4. Open the CMS and click *Download Content* on any item.
 
+To update: replace the `extension` folder with the new one, then click the reload icon on the
+extension card in `chrome://extensions`. CMS tabs that are already open keep working.
+
 > If Chrome asks where to save every file, turn off
 > *Settings → Downloads → Ask where to save each file before downloading*.
 > Otherwise the save dialog opens with the renamed file already filled in.

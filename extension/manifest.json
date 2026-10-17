@@ -1,17 +1,28 @@
 {
   "manifest_version": 3,
   "name": "GUC CMS Downloader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Renames GUC CMS downloads to their content title and sorts them into a folder per course.",
-  "permissions": ["downloads", "storage"],
-  "host_permissions": ["https://cms.guc.edu.eg/*"],
+  "permissions": [
+    "downloads",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://cms.guc.edu.eg/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://cms.guc.edu.eg/apps/student/*"],
-      "js": ["lib/naming.js", "content.js"],
+      "matches": [
+        "https://cms.guc.edu.eg/*"
+      ],
+      "js": [
+        "lib/naming.js",
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],

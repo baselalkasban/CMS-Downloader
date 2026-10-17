@@ -1,5 +1,11 @@
 (() => {
+  // Injected twice into the same extension context (manifest + reinjection on update)? Run once.
+  if (window.__cmsDownloader === chrome.runtime) return;
+  window.__cmsDownloader = chrome.runtime;
+
   const N = CMSNaming;
+  // After the extension is reloaded or updated, a copy left running in an open tab loses its connection.
+  const alive = () => Boolean(chrome.runtime?.id);
   let settings = { ...N.DEFAULTS };
   let courseMap = {};
 
@@ -70,11 +76,19 @@
     'click',
     (e) => {
       const a = e.target.closest?.('a');
-      if (!isDownloadLink(a)) return;
-      chrome.runtime.sendMessage({ type: 'register', url: a.href, filename: pathFor(a) });
+      if (!isDownloadLink(a) || !alive()) return;
+      chrome.runtime.sendMessage({ type: 'register', url: a.href, filename: pathFor(a) }).catch(() => {});
     },
     true
   );
+
+  // The background asks for a file's name when no click message reached it.
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type !== 'lookup') return;
+    const key = N.urlKey(msg.url);
+    const a = [...document.querySelectorAll('a')].find((el) => isDownloadLink(el) && N.urlKey(el.href) === key);
+    sendResponse(a ? pathFor(a) : null);
+  });
 
   // Download links in the weeks currently shown (respects the CMS week/tag filters).
   function visibleDownloadLinks() {
@@ -83,11 +97,13 @@
   }
 
   function addDownloadAllButton() {
+    document.querySelectorAll('[data-cms-downloader]').forEach((el) => el.remove());
     if (!visibleDownloadLinks().length) return;
 
     const btn = document.createElement('button');
     const label = () => `Download all (${visibleDownloadLinks().length})`;
     btn.textContent = label();
+    btn.dataset.cmsDownloader = '1';
     btn.title = 'Download every file shown on this page into its course folder';
     Object.assign(btn.style, {
       position: 'fixed',
@@ -115,9 +131,10 @@
       }
       btn.disabled = false;
       btn.textContent = label();
+    btn.dataset.cmsDownloader = '1';
     });
     // Keep the count in sync with the CMS filters.
-    document.addEventListener('click', () => setTimeout(() => !btn.disabled && (btn.textContent = label()), 300));
+    document.addEventListener('click', () => setTimeout(() => alive() && !btn.disabled && (btn.textContent = label()), 300));
     document.body.appendChild(btn);
   }
 
