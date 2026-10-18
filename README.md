@@ -18,6 +18,11 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
 - Adds a **Download all** button to every course page. It clicks every *Download Content* button
   in the weeks currently shown (so it follows the CMS week/tag filters), and the files are marked as seen on the CMS.
   The first time, Chrome asks to allow *multiple downloads* from cms.guc.edu.eg; click **Allow**.
+- Adds a **filter bar** to every course page:
+  - **Type** chips (Lecture Slides, Assignment, VoD, ...) with file counts. Pick several at once.
+  - **Week** dropdown listing every week of the course.
+  - **Search** by file name (press `/` to jump to it).
+  - Weeks with no matching files are hidden, and *Download all* only downloads what the filter shows.
 
 ## Install
 1. Download this repository (green **Code** button → *Download ZIP*) and unzip it.
