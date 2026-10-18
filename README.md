@@ -25,7 +25,8 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
   - Weeks with no matching files are hidden, and *Download all* only downloads what the filter shows.
 
 ## Install
-1. Download this repository (green **Code** button → *Download ZIP*) and unzip it.
+1. Download this repository (green **Code** button → *Download ZIP*) and unzip it somewhere permanent,
+   e.g. `Documents\CMS-Downloader`. Chrome loads the extension from this folder, so don't delete it.
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and select the `extension` folder.
 4. Open the CMS and click *Download Content* on any item.
@@ -33,6 +34,13 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
 > If Chrome asks where to save every file, turn off
 > *Settings → Downloads → Ask where to save each file before downloading*.
 > Otherwise the save dialog opens with the renamed file already filled in.
+
+## Updating
+No need to download from GitHub again:
+1. Double-click **`update.bat`** in the CMS-Downloader folder. It downloads the latest version into the `extension` folder.
+2. Click the extension icon in Chrome and press **Reload extension**.
+
+Your settings are kept. The extension popup also tells you when a new version is available.
 
 ## Settings
 Click the extension icon to change:

@@ -11,6 +11,11 @@
     .hint { color: #999; font-size: 11px; margin-top: 4px; }
     .preview { margin-top: 12px; padding: 8px; background: #2a2a2a; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; }
     #saved { color: #4ade80; font-size: 11px; height: 14px; margin-top: 6px; }
+    .footer { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; font-size: 11px; color: #999; }
+    .footer button { margin-left: auto; padding: 5px 10px; border: 1px solid #555; border-radius: 4px; background: #2a2a2a; color: #eee; font: inherit; cursor: pointer; }
+    .footer button:hover { border-color: #888; }
+    #update { margin-top: 8px; padding: 8px; border-radius: 4px; background: #3a2f05; color: #f5d36b; font-size: 11px; }
+    #update[hidden] { display: none; }
   </style>
 </head>
 <body>
@@ -22,6 +27,11 @@
   <label class="check"><input type="checkbox" id="keepItemNumber" /> Keep item number in file name</label>
   <div class="preview" id="preview"></div>
   <div id="saved"></div>
+  <div id="update" hidden></div>
+  <div class="footer">
+    <span id="version"></span>
+    <button type="button" id="reload" title="Load the files from the extension folder again, e.g. after running update.bat">Reload extension</button>
+  </div>
   <script src="lib/naming.js"></script>
   <script src="popup.js"></script>
 </body>

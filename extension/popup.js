@@ -40,3 +40,28 @@ chrome.storage.sync.get(N.DEFAULTS).then((s) => {
   preview(s);
   for (const id of fields) document.getElementById(id).addEventListener('input', save);
 });
+
+// Update check: compare with the manifest on GitHub.
+const MANIFEST_URL =
+  'https://raw.githubusercontent.com/baselalkasban/CMS-Downloader/claude/awesome-faraday-gfnufa/extension/manifest.json';
+const current = chrome.runtime.getManifest().version;
+document.getElementById('version').textContent = `Version ${current}`;
+document.getElementById('reload').addEventListener('click', () => chrome.runtime.reload());
+
+const newer = (a, b) => {
+  const [x, y] = [a, b].map((v) => v.split('.').map(Number));
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  }
+  return false;
+};
+
+fetch(MANIFEST_URL, { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((latest) => {
+    if (!latest || !newer(latest.version, current)) return;
+    const box = document.getElementById('update');
+    box.textContent = `Version ${latest.version} is available. Run update.bat in the CMS-Downloader folder, then press "Reload extension".`;
+    box.hidden = false;
+  })
+  .catch(() => {});
