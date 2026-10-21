@@ -136,5 +136,15 @@
     }
   });
 
+  // Remember every file's title, so files saved outside a Download click (preview, PDF viewer) are named too.
+  const titles = {};
+  for (const a of document.querySelectorAll('a')) {
+    const title = isDownloadLink(a) && itemTitle(a);
+    if (title) titles[N.urlKey(a.href)] = title;
+  }
+  if (Object.keys(titles).length) {
+    chrome.storage.local.get({ titles: {} }).then(({ titles: saved }) => chrome.storage.local.set({ titles: { ...saved, ...titles } }));
+  }
+
   if (/CourseViewStn\.aspx/i.test(location.pathname)) addDownloadAllButton();
 })();

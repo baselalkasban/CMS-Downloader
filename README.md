@@ -27,6 +27,9 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
       highlighted, and a dot on weeks with new files.
     - A compact file list with file-type icons, colored type labels and a *New* badge on files you haven't opened.
     - One-click *Download*, *Open in a new tab* and *Watch* (for videos), plus *Download week* and *Download all/shown*.
+    - **Click a file's name to preview it** (PDFs, images, videos) in a window titled with the file's name.
+      Use ← / → to go through files and Esc to close. *Open in a new tab* also shows the real file name as the tab title.
+    - **5-star ratings** under every file, saved to the CMS. Click the same star again to remove your rating.
     - Search (press `/`), type filters, *New only*, newest/oldest week order, collapsible weeks, and the course announcement at the top.
 - In *Classic view*, course pages get a filter bar (type, week, search) instead.
 

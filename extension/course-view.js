@@ -66,11 +66,13 @@
         canDownload: Boolean(anchor && anchor.style.display !== 'none'),
         canWatch: Boolean(vod && vod.style.display !== 'none'),
         seen: (anchor?.dataset.seen || vod?.dataset.seen) !== 'no',
+        rating: Number(box.querySelector('.ratedata')?.dataset.rate) || 0,
       });
     }
     return week;
   });
   const items = weeks.flatMap((w) => w.items);
+  const itemsById = new Map(items.filter((it) => it.id).map((it) => [it.id, it]));
 
   // Week numbers follow the calendar: the earliest date is week 1. Folders sharing a date share a number.
   const dates = [...new Set(weeks.filter((w) => w.date).map((w) => +w.date))].sort((a, b) => a - b);
@@ -101,6 +103,13 @@
   const fileColor = (it) => (it.canWatch && !it.canDownload ? 'purple' : EXT_COLORS[it.ext] || 'gray');
   const weekName = (w) => (w.number ? `Week ${w.number}` : w.label || 'Week');
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  // How the browser can show a file: in a frame (PDF), as an image or as a video.
+  const previewKind = (it) =>
+    !it.canDownload ? null
+    : /^(pdf|txt)$/.test(it.ext) ? 'frame'
+    : /^(png|jpe?g|gif|webp|svg)$/.test(it.ext) ? 'image'
+    : /^(mp4|webm|ogg)$/.test(it.ext) ? 'video'
+    : null;
 
   const ICONS = {
     download: '<svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>',
@@ -109,7 +118,64 @@
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
     chevron: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
     flag: '<svg viewBox="0 0 24 24"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
+    close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    left: '<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',
+    right: '<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
   };
+
+  // ---------- Ratings (saved to the CMS, like its own stars) ----------
+
+  function starsHtml(it) {
+    if (!it.id || !studentId) return '';
+    return `<span class="cmsv-stars" data-id="${U.esc(it.id)}" role="group" aria-label="Your rating">${[5, 4, 3, 2, 1]
+      .map(
+        (n) =>
+          `<button type="button" data-star="${n}" class="${n <= it.rating ? 'on' : ''}" title="${n === it.rating ? 'Remove rating' : `Rate ${n} of 5`}" aria-label="Rate ${n} of 5">${ICONS.star}</button>`
+      )
+      .join('')}</span>`;
+  }
+
+  function paintStars(it) {
+    for (const box of document.querySelectorAll(`.cmsv-stars[data-id="${CSS.escape(it.id)}"]`)) {
+      for (const b of box.querySelectorAll('[data-star]')) {
+        const n = +b.dataset.star;
+        b.classList.toggle('on', n <= it.rating);
+        b.title = n === it.rating ? 'Remove rating' : `Rate ${n} of 5`;
+      }
+    }
+    it.row?.classList.toggle('is-rated', it.rating > 0);
+    updateCounts();
+  }
+
+  // Clicking the current rating again removes it.
+  async function rate(it, n) {
+    const before = it.rating;
+    it.rating = n === before ? 0 : n;
+    paintStars(it);
+    try {
+      const res = await fetch('CourseViewStn.aspx/Goajax2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ studentid: studentId, videoid: it.id, rateid: it.rating }),
+      });
+      if (!res.ok) throw new Error(res.status);
+      U.toast(it.rating ? `Rated “${it.title}” ${it.rating}/5` : 'Rating removed');
+    } catch {
+      it.rating = before;
+      paintStars(it);
+      U.toast('Couldn’t save your rating. Please try again.');
+    }
+  }
+
+  function onStarClick(e) {
+    const star = e.target.closest('.cmsv-stars [data-star]');
+    if (!star) return false;
+    const it = itemsById.get(star.closest('.cmsv-stars').dataset.id);
+    if (it) rate(it, +star.dataset.star);
+    return true;
+  }
+
 
   // Tell the CMS a file was opened, like its own buttons do, so it stops showing as new.
   function markSeen(it) {
@@ -168,6 +234,7 @@
           <span><b>${dates.length || weeks.length}</b> weeks</span>
           <span><b>${items.length}</b> files</span>
           <span class="cmsv-stat-new"><b data-new-count>0</b> new</span>
+          <span><b data-rated-count>0</b> rated</span>
         </div>
       </div>
       <div class="cmsv-hero-actions">
@@ -256,17 +323,16 @@
     const list = w.section.querySelector('.cmsv-files');
     for (const it of w.items) {
       it.row = document.createElement('li');
-      it.row.className = 'cmsv-file' + (it.seen ? '' : ' is-new');
-      const openable = it.url && /^(pdf|png|jpe?g|gif|mp4|txt)$/.test(it.ext) && it.canDownload;
+      it.row.className = 'cmsv-file' + (it.seen ? '' : ' is-new') + (it.rating ? ' is-rated' : '');
       it.row.innerHTML = `
         <span class="cmsv-ext" data-color="${fileColor(it)}">${U.esc(fileIcon(it))}</span>
         <span class="cmsv-file-main">
-          <span class="cmsv-file-title">${U.esc(it.title)}</span>
-          <span class="cmsv-file-sub"><span class="cmsv-type" data-color="${typeColor(it.type)}">${U.esc(it.type)}</span><span class="cmsv-new">New</span></span>
+          <button type="button" class="cmsv-file-title" data-act="preview" title="${it.canWatch && !it.canDownload ? 'Watch' : 'Preview'}">${U.esc(it.title)}</button>
+          <span class="cmsv-file-sub"><span class="cmsv-type" data-color="${typeColor(it.type)}">${U.esc(it.type)}</span><span class="cmsv-new">New</span>${starsHtml(it)}</span>
         </span>
         <span class="cmsv-file-actions">
           ${it.canWatch ? `<button type="button" class="cmsv-icon-btn" data-act="watch" title="Watch">${ICONS.play}</button>` : ''}
-          ${openable ? `<a class="cmsv-icon-btn" data-act="open" href="${U.esc(it.url)}" target="_blank" rel="noopener" title="Open in a new tab">${ICONS.open}</a>` : ''}
+          ${previewKind(it) ? `<button type="button" class="cmsv-icon-btn" data-act="tab" title="Open in a new tab">${ICONS.open}</button>` : ''}
           ${it.canDownload ? `<button type="button" class="cmsv-icon-btn cmsv-icon-primary" data-act="download" title="Download">${ICONS.download}</button>` : ''}
         </span>`;
       it.row.cmsvItem = it;
@@ -298,6 +364,123 @@
     });
   }
 
+  // ---------- Preview ----------
+
+  const preview = document.createElement('div');
+  preview.className = 'cmsv cmsv-preview';
+  preview.hidden = true;
+  preview.innerHTML = `
+    <div class="cmsv-preview-backdrop" data-pv="close"></div>
+    <div class="cmsv-preview-dialog" role="dialog" aria-modal="true">
+      <header class="cmsv-preview-head">
+        <span class="cmsv-ext"></span>
+        <div class="cmsv-preview-title">
+          <h3></h3>
+          <div class="cmsv-preview-sub"></div>
+        </div>
+        <div class="cmsv-preview-actions">
+          <button type="button" class="cmsv-icon-btn" data-pv="prev" title="Previous file (←)">${ICONS.left}</button>
+          <button type="button" class="cmsv-icon-btn" data-pv="next" title="Next file (→)">${ICONS.right}</button>
+          <button type="button" class="cmsv-icon-btn" data-pv="tab" title="Open in a new tab">${ICONS.open}</button>
+          <button type="button" class="cmsv-icon-btn cmsv-icon-primary" data-pv="download" title="Download">${ICONS.download}</button>
+          <button type="button" class="cmsv-icon-btn" data-pv="close" title="Close (Esc)">${ICONS.close}</button>
+        </div>
+      </header>
+      <div class="cmsv-preview-body"></div>
+    </div>`;
+  let previewing = null;
+  const pageTitle = document.title;
+
+  // The files currently listed, in the order they appear on screen.
+  const listedItems = () => [...weeksBox.querySelectorAll('.cmsv-file:not(.cmsv-hide)')].map((r) => r.cmsvItem);
+
+  function viewerHtml(it) {
+    const url = U.esc(it.url);
+    const kind = previewKind(it);
+    if (kind === 'frame') return `<iframe src="${url}" title="${U.esc(it.title)}"></iframe>`;
+    if (kind === 'image') return `<img src="${url}" alt="${U.esc(it.title)}">`;
+    if (kind === 'video') return `<video src="${url}" controls preload="metadata"></video>`;
+    return '';
+  }
+
+  function openPreview(it) {
+    if (!it) return;
+    previewing = it;
+    const head = preview.querySelector('.cmsv-preview-head');
+    const ext = head.querySelector('.cmsv-ext');
+    ext.dataset.color = fileColor(it);
+    ext.textContent = fileIcon(it);
+    head.querySelector('h3').textContent = it.title;
+    head.querySelector('.cmsv-preview-sub').innerHTML = `
+      <span class="cmsv-type" data-color="${typeColor(it.type)}">${U.esc(it.type)}</span>
+      <span>${U.esc([weekName(it.week), U.fmtDate(it.week.date)].filter(Boolean).join(' · '))}</span>
+      ${starsHtml(it)}`;
+    head.querySelector('[data-pv="tab"]').hidden = !previewKind(it);
+    head.querySelector('[data-pv="download"]').hidden = !it.canDownload;
+    const list = listedItems();
+    const i = list.indexOf(it);
+    head.querySelector('[data-pv="prev"]').disabled = i <= 0;
+    head.querySelector('[data-pv="next"]').disabled = i < 0 || i >= list.length - 1;
+
+    const body = preview.querySelector('.cmsv-preview-body');
+    const viewer = viewerHtml(it);
+    body.innerHTML =
+      viewer ||
+      `<div class="cmsv-preview-none">
+        <span class="cmsv-ext" data-color="${fileColor(it)}">${U.esc(fileIcon(it))}</span>
+        <p>${it.ext ? `${U.esc(it.ext.toUpperCase())} files can’t be previewed in the browser.` : 'This file can’t be previewed.'}</p>
+        ${it.canDownload ? `<button type="button" class="cmsv-btn" data-pv="download">${ICONS.download} Download</button>` : ''}
+      </div>`;
+
+    if (preview.hidden) {
+      preview.hidden = false;
+      document.documentElement.classList.add('cmsv-no-scroll');
+    }
+    document.title = it.title;
+    markSeen(it);
+  }
+
+  function closePreview() {
+    preview.hidden = true;
+    preview.querySelector('.cmsv-preview-body').innerHTML = '';
+    document.documentElement.classList.remove('cmsv-no-scroll');
+    document.title = pageTitle;
+    previewing?.row?.querySelector('.cmsv-file-title')?.focus({ preventScroll: true });
+    previewing = null;
+  }
+
+  function stepPreview(dir) {
+    const list = listedItems();
+    const next = list[list.indexOf(previewing) + dir];
+    if (next) openPreview(next);
+  }
+
+  // A new tab titled with the file's name instead of the CMS's GUC_… file name.
+  function openInTab(it) {
+    const viewer = viewerHtml(it);
+    if (!viewer) return;
+    markSeen(it);
+    const tab = window.open('', '_blank');
+    if (!tab) return window.open(it.url, '_blank');
+    const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#f5b301"/><text x="16" y="21" font-family="Arial" font-size="${fileIcon(it).length > 3 ? 8 : 10}" font-weight="700" text-anchor="middle" fill="#1a1400">${fileIcon(it)}</text></svg>`;
+    tab.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${U.esc(it.title)}</title>
+      <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(icon)}">
+      <style>html,body{margin:0;height:100%;background:#202124}iframe{display:block;width:100%;height:100%;border:0}
+      img,video{display:block;max-width:100%;max-height:100%;margin:auto;position:absolute;inset:0}</style></head>
+      <body>${viewer}</body></html>`);
+    tab.document.close();
+  }
+
+  preview.addEventListener('click', (e) => {
+    if (onStarClick(e)) return;
+    const act = e.target.closest('[data-pv]')?.dataset.pv;
+    if (act === 'close') closePreview();
+    else if (act === 'prev') stepPreview(-1);
+    else if (act === 'next') stepPreview(1);
+    else if (act === 'tab') openInTab(previewing);
+    else if (act === 'download') download(previewing);
+  });
+
   // ---------- Filtering ----------
 
   const search = root.querySelector('.cmsv-search input');
@@ -318,6 +501,7 @@
 
   function updateCounts() {
     root.querySelector('[data-new-count]').textContent = items.filter((it) => !it.seen).length;
+    root.querySelector('[data-rated-count]').textContent = items.filter((it) => it.rating).length;
     for (const w of weeks) {
       const dot = w.navLink.querySelector('.cmsv-nav-count i');
       if (dot && !w.items.some((it) => !it.seen)) dot.remove();
@@ -403,6 +587,7 @@
       return scrollToWeek(weeks.find((w) => w.navLink === navLink));
     }
 
+    if (onStarClick(e)) return;
     const el = e.target.closest('[data-act]');
     if (!el) return;
     const it = el.closest('.cmsv-file')?.cmsvItem;
@@ -410,8 +595,10 @@
     switch (el.dataset.act) {
       case 'download':
         return download(it);
-      case 'open':
-        return markSeen(it);
+      case 'preview':
+        return it.canWatch && !it.canDownload ? (markSeen(it), it.vod.click()) : openPreview(it);
+      case 'tab':
+        return openInTab(it);
       case 'watch':
         markSeen(it);
         return it.vod.click();
@@ -449,6 +636,14 @@
   sortSelect.addEventListener('change', () => sortWeeks(sortSelect.value));
 
   document.addEventListener('keydown', (e) => {
+    if (!preview.hidden) {
+      if (e.key === 'Escape') closePreview();
+      else if (e.key === 'ArrowLeft') stepPreview(-1);
+      else if (e.key === 'ArrowRight') stepPreview(1);
+      else return;
+      e.preventDefault();
+      return;
+    }
     const typing = /^(input|textarea|select)$/i.test(document.activeElement?.tagName);
     if (e.key === '/' && !typing) {
       e.preventDefault();
@@ -477,6 +672,7 @@
 
   document.body.classList.add('cmsv-on');
   pageRoot.prepend(root);
+  document.body.appendChild(preview);
   let order = 'desc';
   try {
     order = localStorage.getItem('cmsv:sort') || 'desc';

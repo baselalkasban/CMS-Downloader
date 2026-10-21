@@ -25,16 +25,18 @@ function take(urls) {
   return null;
 }
 
-// No click was recorded (e.g. the file was opened from "View Content"):
-// still drop it into its course folder, keeping the original file name.
+// No click was recorded (e.g. the file was saved from a preview or the PDF viewer):
+// use the title remembered from the course page, or else keep the original file name.
 async function fallbackPath(url) {
   const id = N.courseIdFromUrl(url);
   if (!id) return null;
-  const [settings, { courses = {} }] = await Promise.all([
+  const [settings, { courses = {}, titles = {} }] = await Promise.all([
     chrome.storage.sync.get(N.DEFAULTS),
-    chrome.storage.local.get('courses'),
+    chrome.storage.local.get(['courses', 'titles']),
   ]);
   const course = courses[id] || { id, code: '', name: `Course ${id}` };
+  const title = titles[N.urlKey(url)];
+  if (title) return N.buildPath({ url, title, course }, settings);
   return N.buildPath({ url, title: N.originalName(url), course }, { ...settings, keepItemNumber: true });
 }
 

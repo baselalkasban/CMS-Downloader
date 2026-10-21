@@ -217,7 +217,25 @@ body.cmsv-on, body.cmsv-on .app-main, body.cmsv-on .app-main__outer, body.cmsv-o
   font-size: 10px; font-weight: 800; letter-spacing: .03em;
 }
 .cmsv-file-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.cmsv-file-title { overflow: hidden; font-weight: 550; white-space: nowrap; text-overflow: ellipsis; }
+.cmsv-file-title {
+  overflow: hidden; max-width: 100%; padding: 0; border: 0; background: none;
+  color: var(--text); font-weight: 550; text-align: left; white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
+}
+.cmsv-file-title:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.cmsv-file-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Stars: buttons are in 5..1 order and shown reversed, so hovering a star lights it and the ones before it. */
+.cmsv-stars { display: inline-flex; flex-direction: row-reverse; margin-left: 4px; }
+.cmsv-stars button {
+  display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0;
+  background: none; color: #4a4a54; cursor: pointer; transition: color .12s, transform .12s;
+}
+.cmsv-stars svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+.cmsv-stars button.on { color: var(--accent); }
+.cmsv-stars:hover button { color: #4a4a54; }
+.cmsv-stars button:hover, .cmsv-stars button:hover ~ button { color: var(--accent); }
+.cmsv-stars button:hover { transform: scale(1.18); }
+.cmsv-file:not(:hover):not(.is-rated) .cmsv-stars { opacity: .7; }
 .cmsv-file-sub { display: flex; align-items: center; gap: 8px; margin-top: 1px; }
 .cmsv-type { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
 .cmsv-type::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
@@ -292,9 +310,43 @@ body.cmsv-on, body.cmsv-on .app-main, body.cmsv-on .app-main__outer, body.cmsv-o
 .cmsv-feed-time { flex: none; color: var(--faint); font-size: 12px; }
 @media (max-width: 900px) { .cmsv-home-cols { grid-template-columns: minmax(0, 1fr); } }
 
+/* ---------- Preview ---------- */
+html.cmsv-no-scroll { overflow: hidden; }
+.cmsv-preview[hidden] { display: none !important; }
+.cmsv-preview { position: fixed; inset: 0; z-index: 100001; display: grid; place-items: center; padding: 24px; }
+.cmsv-preview-backdrop { position: absolute; inset: 0; background: rgba(5, 5, 7, .72); backdrop-filter: blur(4px); animation: cmsv-fade .15s ease; }
+.cmsv-preview-dialog {
+  position: relative; display: flex; flex-direction: column;
+  width: min(1200px, 100%); height: min(92vh, 100%);
+  overflow: hidden; border: 1px solid var(--border); border-radius: 16px;
+  background: var(--surface); box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+  animation: cmsv-pop .18s ease;
+}
+@keyframes cmsv-fade { from { opacity: 0; } }
+@keyframes cmsv-pop { from { opacity: 0; transform: translateY(8px) scale(.985); } }
+.cmsv-preview-head { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--border); }
+.cmsv-preview-title { flex: 1; min-width: 0; }
+.cmsv-preview-title h3 { margin: 0; overflow: hidden; color: var(--text); font: 650 16px/1.3 inherit; white-space: nowrap; text-overflow: ellipsis; }
+.cmsv-preview-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.cmsv-preview-sub .cmsv-stars { opacity: 1; }
+.cmsv-preview-actions { display: flex; gap: 4px; flex: none; }
+.cmsv-preview-actions .cmsv-icon-btn:disabled { opacity: .3; cursor: default; background: transparent; border-color: transparent; }
+.cmsv-preview-body { position: relative; flex: 1; min-height: 0; background: #202124; }
+.cmsv-preview-body iframe { display: block; width: 100%; height: 100%; border: 0; }
+.cmsv-preview-body img, .cmsv-preview-body video { position: absolute; inset: 0; max-width: 100%; max-height: 100%; margin: auto; }
+.cmsv-preview-none { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; height: 100%; color: var(--muted); }
+.cmsv-preview-none .cmsv-ext { width: 64px; height: 64px; border-radius: 14px; font-size: 15px; }
+.cmsv-preview-none p { margin: 0; }
+@media (max-width: 640px) {
+  .cmsv-preview { padding: 0; }
+  .cmsv-preview-dialog { height: 100%; border-radius: 0; }
+  .cmsv-preview-head { flex-wrap: wrap; }
+  .cmsv-preview-actions { width: 100%; justify-content: space-between; }
+}
+
 /* ---------- Toast & classic switch ---------- */
 .cmsv-toast {
-  position: fixed; left: 50%; bottom: 24px; z-index: 100000;
+  position: fixed; left: 50%; bottom: 24px; z-index: 100002;
   padding: 10px 16px; border: 1px solid var(--border); border-radius: 10px;
   background: var(--surface-2); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
   font-size: 13px; opacity: 0; transform: translate(-50%, 10px); pointer-events: none;
