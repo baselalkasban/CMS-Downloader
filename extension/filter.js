@@ -1,5 +1,6 @@
 // Adds a type / week / search filter bar to CMS course pages.
 (() => {
+  if (CMSUI.getMode() === 'pro') return; // the Pro view has its own filters
   const weeks = [...document.querySelectorAll('.weeksdata')];
   if (!weeks.length) return;
 

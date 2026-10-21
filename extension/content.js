@@ -69,8 +69,12 @@
   document.addEventListener(
     'click',
     (e) => {
-      const a = e.target.closest?.('a');
+      let a = e.target.closest?.('a');
       if (!isDownloadLink(a)) return;
+      // Links in the Pro view point at the same files; name them from the CMS's own item.
+      if (a.closest('.cmsv')) {
+        a = [...document.querySelectorAll('a')].find((x) => !x.closest('.cmsv') && x.href === a.href) || a;
+      }
       chrome.runtime.sendMessage({ type: 'register', url: a.href, filename: pathFor(a) });
     },
     true
@@ -86,6 +90,7 @@
     if (!visibleDownloadLinks().length) return;
 
     const btn = document.createElement('button');
+    btn.className = 'cms-dl-all';
     const label = () => `Download all (${visibleDownloadLinks().length})`;
     btn.textContent = label();
     btn.title = 'Download every file shown on this page into its course folder';
