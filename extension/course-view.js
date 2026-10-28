@@ -16,6 +16,18 @@
   const season = document.querySelector('[id$="LabelseasonName"]')?.textContent.trim() || '';
   const studentId = document.getElementById('HiddenFieldstaffid')?.value || '';
   const courseDesc = document.querySelector('[id$="_desc"]');
+  const params = new URLSearchParams(location.search);
+  const courseId = params.get('id') || document.getElementById('HiddenFieldcourseid')?.value || '';
+  const seasonId = params.get('sid') || document.getElementById('HiddenFieldseasonid')?.value || '';
+
+  // The student's courses this season, from the CMS sidebar, for the course switcher.
+  const enrolled = [...new Map(
+    [...document.querySelectorAll('.app-sidebar a[href*="CourseViewStn.aspx?id="]')].map((a) => {
+      const u = new URL(a.href, location.href);
+      const text = a.textContent.replace(/\s+/g, ' ').trim();
+      return [u.searchParams.get('id'), { id: u.searchParams.get('id'), url: u.pathname + u.search, text }];
+    })
+  ).values()];
 
   function N_parseCourse(text) {
     const m = /\(\|\s*([^|()]+?)\s*\|\)\s*([^\n]+?)\s*\((\d+)\)/.exec(text || '');
@@ -84,6 +96,47 @@
   for (const w of weeks) {
     w.current = Boolean(w.date && +w.date === currentDate);
     w.latest = Boolean(w.date && +w.date === latestDate);
+  }
+
+  // Sidebar links read like "(|CSEN605|..."; show "CSEN605" until full names load from storage below.
+  for (const c of enrolled) {
+    c.label = c.id === courseId ? `${course.code} · ${course.name}` : c.text.replace(/[()|.…]+/g, ' ').trim() || `Course ${c.id}`;
+  }
+
+  // ---------- Remembered data (command palette, recent files) ----------
+
+  // Weeks and files of this course, so the Ctrl+K palette can find them from any page.
+  function saveIndex() {
+    if (!courseId) return;
+    const data = {
+      id: courseId, sid: seasonId, code: course.code, name: course.name, season, savedAt: Date.now(),
+      weeks: weeks.map((w) => ({ idx: w.index, name: weekName(w), date: w.date ? +w.date : null, topic: w.topic, tag: w.tag })),
+      files: items.filter((it) => it.id).map((it) => ({ id: it.id, title: it.title, type: it.type, ext: it.ext || (it.canWatch ? 'vid' : ''), week: weekName(it.week) })),
+    };
+    chrome.storage.local.get({ index: {} }).then(({ index }) => chrome.storage.local.set({ index: { ...index, [courseId]: data } }));
+  }
+
+  function remember(it) {
+    if (!it?.id || !courseId) return;
+    chrome.storage.local.get({ recent: [] }).then(({ recent }) => {
+      const entry = { courseId, sid: seasonId, code: course.code, fileId: it.id, title: it.title, type: it.type, at: Date.now() };
+      chrome.storage.local.set({ recent: [entry, ...recent.filter((r) => !(r.courseId === courseId && r.fileId === it.id))].slice(0, 20) });
+    });
+  }
+
+  // Links from the palette: #cmsv-file=<content id> opens that file, #cmsv-week=<n> jumps to a week.
+  function handleHash() {
+    const m = /^#cmsv-(file|week)=(.+)$/.exec(location.hash);
+    if (!m) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    if (m[1] === 'week') return scrollToWeek(weeks[+m[2]]);
+    const it = itemsById.get(m[2]);
+    if (!it) return;
+    resetFilters();
+    it.week.section.classList.remove('is-collapsed');
+    it.row.scrollIntoView({ block: 'center' });
+    it.row.classList.add('flash');
+    if (previewKind(it)) openPreview(it);
   }
 
   // ---------- Small helpers ----------
@@ -196,6 +249,7 @@
   // Click the CMS's own button so its download tracking and the file renaming both apply.
   function download(it) {
     if (!it.canDownload) return;
+    remember(it);
     it.anchor.click();
     it.seen = true;
     it.row?.classList.remove('is-new');
@@ -238,6 +292,14 @@
         </div>
       </div>
       <div class="cmsv-hero-actions">
+        ${
+          enrolled.length > 1
+            ? `<select class="cmsv-select" data-act="switch" aria-label="Switch course">${enrolled
+                .map((c) => `<option value="${U.esc(c.url)}"${c.id === courseId ? ' selected' : ''}>${U.esc(c.label)}</option>`)
+                .join('')}</select>`
+            : ''
+        }
+        <a class="cmsv-btn cmsv-btn-ghost" href="/apps/student/Chat/StnGroupChat.aspx?id=${U.esc(courseId)}&sid=${U.esc(seasonId)}" title="Open this course's group chat">Group chat</a>
         <button type="button" class="cmsv-btn" data-act="current">Go to ${currentDate ? 'current' : 'latest'} week</button>
         <button type="button" class="cmsv-btn cmsv-btn-ghost" data-act="classic" title="Show the original CMS layout">Classic view</button>
       </div>
@@ -406,6 +468,7 @@
   function openPreview(it) {
     if (!it) return;
     previewing = it;
+    remember(it);
     const head = preview.querySelector('.cmsv-preview-head');
     const ext = head.querySelector('.cmsv-ext');
     ext.dataset.color = fileColor(it);
@@ -460,9 +523,13 @@
     const viewer = viewerHtml(it);
     if (!viewer) return;
     markSeen(it);
+    remember(it);
     const tab = window.open('', '_blank');
     if (!tab) return window.open(it.url, '_blank');
-    const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#f5b301"/><text x="16" y="21" font-family="Arial" font-size="${fileIcon(it).length > 3 ? 8 : 10}" font-weight="700" text-anchor="middle" fill="#1a1400">${fileIcon(it)}</text></svg>`;
+    const css = getComputedStyle(document.documentElement);
+    const accentColor = css.getPropertyValue('--cv-accent').trim() || '#f5b301';
+    const accentText = css.getPropertyValue('--cv-accent-text').trim() || '#1a1400';
+    const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="${accentColor}"/><text x="16" y="21" font-family="Arial" font-size="${fileIcon(it).length > 3 ? 8 : 10}" font-weight="700" text-anchor="middle" fill="${accentText}">${fileIcon(it)}</text></svg>`;
     tab.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${U.esc(it.title)}</title>
       <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(icon)}">
       <style>html,body{margin:0;height:100%;background:#202124}iframe{display:block;width:100%;height:100%;border:0}
@@ -633,6 +700,7 @@
   });
 
   search.addEventListener('input', apply);
+  root.querySelector('[data-act="switch"]')?.addEventListener('change', (e) => (location.href = e.target.value));
   sortSelect.addEventListener('change', () => sortWeeks(sortSelect.value));
 
   document.addEventListener('keydown', (e) => {
@@ -645,7 +713,13 @@
       return;
     }
     const typing = /^(input|textarea|select)$/i.test(document.activeElement?.tagName);
-    if (e.key === '/' && !typing) {
+    if ((e.key === 'j' || e.key === 'k') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const order = [...weeksBox.children].filter((el) => !el.classList.contains('cmsv-hide'));
+      const now = order.findIndex((el) => el.getBoundingClientRect().top > 100);
+      const at = now < 0 ? order.length : now;
+      const target = e.key === 'j' ? order[at] : order[Math.max(at - 2, 0)];
+      if (target) scrollToWeek(weeks.find((w) => w.section === target));
+    } else if (e.key === '/' && !typing) {
       e.preventDefault();
       search.focus();
     } else if (e.key === 'Escape' && document.activeElement === search) {
@@ -681,4 +755,18 @@
   sortWeeks(order);
   updateCounts();
   apply();
+  saveIndex();
+  handleHash();
+  window.addEventListener('hashchange', handleHash);
+
+  // Show proper course names in the switcher once the extension's course list is loaded.
+  chrome.storage.local.get({ courses: {} }).then(({ courses }) => {
+    const select = root.querySelector('[data-act="switch"]');
+    if (!select) return;
+    for (const opt of select.options) {
+      const c = enrolled.find((x) => x.url === opt.value);
+      const known = c && courses[c.id];
+      if (known) opt.textContent = `${known.code} · ${known.name}`;
+    }
+  });
 })();

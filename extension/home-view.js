@@ -122,6 +122,19 @@
       </div>
     </header>
 
+    <nav class="cmsv-quick" aria-label="CMS pages">
+      <button type="button" class="cmsv-quick-search" data-act="palette">${'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'}<span>Search courses, weeks and files…</span><kbd>Ctrl K</kbd></button>
+      <a href="/apps/student/ViewAllCourseStn.aspx">All courses</a>
+      <a href="/apps/student/AllNotification.aspx">Notifications</a>
+      <a href="/apps/student/ViewComplaintStn.aspx">My issues</a>
+      <a href="/apps/student/Chat/StnGroupChatlist.aspx">Group chats</a>
+    </nav>
+
+    <section class="cmsv-continue" hidden>
+      <h2 class="cmsv-section-title">Continue where you left off</h2>
+      <div class="cmsv-continue-list"></div>
+    </section>
+
     <h2 class="cmsv-section-title">Your courses</h2>
     <div class="cmsv-courses">
       ${courses
@@ -200,11 +213,30 @@
 
   root.addEventListener('click', (e) => {
     if (e.target.closest('[data-act="classic"]')) return U.setMode('classic');
+    if (e.target.closest('[data-act="palette"]')) return window.CMSPalette?.open();
     const el = e.target.closest('[data-course]');
     const c = el && courses[+el.dataset.course];
     if (!c?.button) return;
     el.classList.add('is-loading');
     c.button.click(); // the CMS opens courses through its own form button
+  });
+
+  // Files opened recently in the Pro view (saved by the course page).
+  chrome.storage.local.get({ recent: [] }).then(({ recent }) => {
+    const list = recent.slice(0, 6);
+    if (!list.length) return;
+    const color = (code) => courses.find((c) => c.code === code)?.color || 'gray';
+    root.querySelector('.cmsv-continue-list').innerHTML = list
+      .map(
+        (r) => `
+        <a class="cmsv-continue-card" data-color="${color(r.code)}" href="/apps/student/CourseViewStn.aspx?id=${U.esc(r.courseId)}&sid=${U.esc(r.sid)}#cmsv-file=${U.esc(r.fileId)}">
+          <span class="cmsv-code">${U.esc(r.code || '')}</span>
+          <span class="cmsv-continue-title">${U.esc(r.title)}</span>
+          <span class="cmsv-continue-sub">${U.esc([r.type, ago(new Date(r.at))].filter(Boolean).join(' · '))}</span>
+        </a>`
+      )
+      .join('');
+    root.querySelector('.cmsv-continue').hidden = false;
   });
 
   document.body.classList.add('cmsv-on');

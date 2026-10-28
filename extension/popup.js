@@ -65,3 +65,21 @@ fetch(MANIFEST_URL, { cache: 'no-store' })
     box.hidden = false;
   })
   .catch(() => {});
+
+// Theme picker: the CMS tabs follow the stored theme live.
+const themesBox = document.getElementById('themes');
+chrome.storage.sync.get({ theme: CMSThemes[0].id }).then(({ theme }) => {
+  for (const t of CMSThemes) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'theme';
+    b.title = `${t.name}: ${t.description}`;
+    b.setAttribute('aria-pressed', String(t.id === theme));
+    b.innerHTML = `<span class="sw">${t.swatch.map((c) => `<i style="background:${c}"></i>`).join('')}</span>${t.name.split(' ')[0]}`;
+    b.addEventListener('click', () => {
+      chrome.storage.sync.set({ theme: t.id });
+      themesBox.querySelectorAll('.theme').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    themesBox.appendChild(b);
+  }
+});

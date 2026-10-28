@@ -16,11 +16,22 @@
     .footer button:hover { border-color: #888; }
     #update { margin-top: 8px; padding: 8px; border-radius: 4px; background: #3a2f05; color: #f5d36b; font-size: 11px; }
     #update[hidden] { display: none; }
+    h2 { margin: 14px 0 8px; color: #999; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .theme { display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid transparent; border-radius: 8px; background: none; color: #ccc; font: 10.5px/1.2 system-ui, sans-serif; cursor: pointer; text-align: center; }
+    .theme:hover { border-color: #444; }
+    .theme[aria-pressed="true"] { border-color: #f5b301; color: #fff; }
+    .theme .sw { display: flex; height: 28px; overflow: hidden; border: 1px solid #444; border-radius: 6px; }
+    .theme .sw i { flex: 1; }
+    .theme .sw i:last-child { flex: .6; }
   </style>
 </head>
 <body>
   <h1>GUC CMS Downloader</h1>
-  <label for="baseFolder">Folder inside Downloads</label>
+  <h2>Theme</h2>
+  <div class="themes" id="themes"></div>
+  <h2>Downloads</h2>
+  <label for="baseFolder" style="margin-top:0">Folder inside Downloads</label>
   <input type="text" id="baseFolder" placeholder="CMS Pro" />
   <div class="hint">Use "/" for subfolders, e.g. CMS Pro/SEM 5. Leave empty to save straight into Downloads.</div>
   <label class="check"><input type="checkbox" id="keepCourseCode" /> Keep course code in folder name</label>
@@ -33,6 +44,7 @@
     <button type="button" id="reload" title="Load the files from the extension folder again, e.g. after running update.bat">Reload extension</button>
   </div>
   <script src="lib/naming.js"></script>
+  <script src="lib/themes.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

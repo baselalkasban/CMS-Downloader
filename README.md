@@ -18,8 +18,14 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
 - Adds a **Download all** button to every course page. It clicks every *Download Content* button
   in the weeks currently shown (so it follows the CMS week/tag filters), and the files are marked as seen on the CMS.
   The first time, Chrome asks to allow *multiple downloads* from cms.guc.edu.eg; click **Allow**.
-- **Pro view**: a cleaner, dark redesign of the CMS (switch back any time with *Classic view*).
-  - **Home page**: a card per course showing how many files you've opened (progress bar), what's new,
+- **Pro view**: a cleaner redesign of the whole CMS (switch back any time with *Classic view*).
+  - **Every page** gets a restyled header, sidebar (with real course names), tables, cards, buttons, forms and dialogs.
+  - **8 themes**: Midnight Amber, Ocean Depths, Midnight Galaxy, Tech Innovation, Forest Canopy (dark) and
+    Arctic Frost, Modern Minimalist, Botanical Garden (light). Pick one in the extension popup or with Ctrl+K.
+  - **Command palette (Ctrl+K)** on any CMS page: jump to a course, a CMS page, a group chat, any week or any file
+    (files from courses you've opened at least once), or switch theme. Picking a file opens its preview directly.
+  - **Keyboard shortcuts**: press `?` to see them all.
+  - **Home page**: quick links to every CMS page, *Continue where you left off* (your recently opened files), a card per course showing how many files you've opened (progress bar), what's new,
     and its latest update; a *New for you* list of files you haven't opened; and a tidy activity feed grouped by day.
     Click any card or item to open that course.
   - **Course pages**:
@@ -30,7 +36,8 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
     - **Click a file's name to preview it** (PDFs, images, videos) in a window titled with the file's name.
       Use ← / → to go through files and Esc to close. *Open in a new tab* also shows the real file name as the tab title.
     - **5-star ratings** under every file, saved to the CMS. Click the same star again to remove your rating.
-    - Search (press `/`), type filters, *New only*, newest/oldest week order, collapsible weeks, and the course announcement at the top.
+    - Search (press `/`), type filters, *New only*, newest/oldest week order, collapsible weeks (J / K to move between them),
+      the course announcement at the top, a course switcher and a link to the course's group chat.
 - In *Classic view*, course pages get a filter bar (type, week, search) instead.
 
 ## Install
@@ -63,3 +70,7 @@ Click the extension icon to change:
   A file downloaded without clicking *Download Content* (for example from *View Content*)
   still goes into its course folder but keeps its original name.
 - If a file with the same name already exists, Chrome adds a number, e.g. `PA01 ... (1).pdf`.
+
+## Development
+Theme colors are generated: edit the table in `tools/themes.py`, then run `python3 tools/themes.py extension`
+to rewrite `extension/themes.css` and `extension/lib/themes.js`.

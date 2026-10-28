@@ -1,0 +1,238 @@
+/* Site-wide restyle of the CMS (header, sidebar and common components) in Pro mode.
+   Colors come from themes.css. Classic mode (no .cmsv-pro on <html>) leaves the CMS untouched.
+   Selectors start with html.cmsv-pro so they beat the CMS's own inline !important rules. */
+
+html.cmsv-pro { color-scheme: dark; scrollbar-color: var(--cv-surface-3) transparent; }
+html.cmsv-pro.cmsv-light { color-scheme: light; }
+html.cmsv-pro body {
+  background: var(--cv-bg) !important;
+  color: var(--cv-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+html.cmsv-pro .app-container,
+html.cmsv-pro .app-main,
+html.cmsv-pro .app-main__outer,
+html.cmsv-pro .app-main__inner { background: var(--cv-bg) !important; color: var(--cv-text); }
+html.cmsv-pro ::selection { background: color-mix(in srgb, var(--cv-accent) 35%, transparent); }
+
+/* ---------- Header ---------- */
+html.cmsv-pro .app-header {
+  background: var(--cv-surface) !important;
+  border-bottom: 1px solid var(--cv-border);
+  box-shadow: none !important;
+}
+html.cmsv-pro .app-header__content { height: 60px !important; background: transparent !important; }
+html.cmsv-pro .app-header h4,
+html.cmsv-pro .app-header .timeline-title h4 { margin: 0; color: var(--cv-text) !important; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+html.cmsv-pro .app-header,
+html.cmsv-pro .app-header .btn,
+html.cmsv-pro .app-header a { color: var(--cv-text) !important; }
+html.cmsv-pro .app-header .header-user-info img { box-shadow: 0 0 0 2px var(--cv-border); }
+html.cmsv-pro .hamburger-inner,
+html.cmsv-pro .hamburger-inner::before,
+html.cmsv-pro .hamburger-inner::after { background-color: var(--cv-text) !important; }
+html.cmsv-pro .app-header__logo { background: var(--cv-sidebar) !important; }
+html.cmsv-pro:not(.cmsv-light) .app-header__logo .logo-src { filter: brightness(0) invert(1); opacity: .9; }
+html.cmsv-pro .header-btn-lg::before { background: var(--cv-border) !important; }
+html.cmsv-pro .header-btn-lg { border-color: var(--cv-border) !important; }
+html.cmsv-pro .app-header-left,
+html.cmsv-pro .app-header-right { gap: 8px; }
+
+/* ---------- Sidebar ---------- */
+html.cmsv-pro .app-sidebar {
+  background: var(--cv-sidebar) !important;
+  background-image: none !important;
+  border-right: 1px solid var(--cv-border);
+  box-shadow: none !important;
+}
+html.cmsv-pro .app-sidebar .scrollbar-sidebar,
+html.cmsv-pro .app-sidebar .app-sidebar__inner { background: transparent !important; }
+html.cmsv-pro .app-sidebar__heading,
+html.cmsv-pro .vertical-nav-menu li.app-sidebar__heading {
+  color: var(--cv-faint) !important; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+}
+html.cmsv-pro .vertical-nav-menu li a,
+html.cmsv-pro .app-sidebar .main-menu {
+  border-radius: 8px;
+  color: var(--cv-muted) !important;
+  background: transparent !important;
+  font-weight: 500 !important;
+  transition: background .12s, color .12s;
+}
+html.cmsv-pro .vertical-nav-menu li a:hover,
+html.cmsv-pro .app-sidebar .main-menu:hover { background: var(--cv-surface-3) !important; color: var(--cv-text) !important; }
+html.cmsv-pro .vertical-nav-menu li.mm-active > a:not(.mm-active) { color: var(--cv-text) !important; font-weight: 600 !important; }
+html.cmsv-pro .vertical-nav-menu li a.mm-active {
+  background: var(--cv-accent-soft) !important; color: var(--cv-accent) !important; font-weight: 600 !important;
+}
+html.cmsv-pro .vertical-nav-menu a.cmsv-side-course { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html.cmsv-pro .vertical-nav-menu .metismenu-icon,
+html.cmsv-pro .vertical-nav-menu .metismenu-state-icon { color: var(--cv-faint) !important; opacity: 1 !important; }
+html.cmsv-pro .vertical-nav-menu li a.mm-active .metismenu-icon { color: var(--cv-accent) !important; }
+html.cmsv-pro .vertical-nav-menu ul::before { background: var(--cv-border) !important; }
+html.cmsv-pro .vertical-nav-menu .badge { background: var(--cv-accent) !important; color: var(--cv-accent-text) !important; }
+
+/* ---------- Page title ---------- */
+html.cmsv-pro .app-page-title { background: transparent !important; color: var(--cv-text); }
+html.cmsv-pro .app-page-title .page-title-icon {
+  background: var(--cv-surface) !important; border: 1px solid var(--cv-border); box-shadow: none !important; color: var(--cv-accent);
+}
+html.cmsv-pro .page-title-subheading { color: var(--cv-muted) !important; opacity: 1; }
+
+/* ---------- Text ---------- */
+html.cmsv-pro .app-main h1, html.cmsv-pro .app-main h2, html.cmsv-pro .app-main h3,
+html.cmsv-pro .app-main h4, html.cmsv-pro .app-main h5, html.cmsv-pro .app-main h6,
+html.cmsv-pro .menu-header-title, html.cmsv-pro .course-text, html.cmsv-pro .widget-heading { color: var(--cv-text) !important; }
+html.cmsv-pro .text-muted, html.cmsv-pro .widget-subheading, html.cmsv-pro small { color: var(--cv-muted) !important; }
+html.cmsv-pro .app-main a:not(.btn):not(.nav-link):not(.cmsv a):not(.dropdown-item) { color: var(--cv-accent); }
+html.cmsv-pro .app-main hr { border-color: var(--cv-border); opacity: 1; }
+
+/* ---------- Cards ---------- */
+html.cmsv-pro .app-main .card {
+  background: var(--cv-surface) !important;
+  border: 1px solid var(--cv-border) !important;
+  border-radius: var(--cv-radius) !important;
+  box-shadow: none !important;
+  color: var(--cv-text);
+  overflow: hidden;
+}
+html.cmsv-pro .app-main .card-header,
+html.cmsv-pro .app-main .card-footer,
+html.cmsv-pro .app-main .dropdown-menu-header-inner:not(.bg-primary) {
+  background: transparent !important;
+  border-color: var(--cv-border) !important;
+  color: var(--cv-text) !important;
+}
+html.cmsv-pro .app-main .menu-header-content { color: var(--cv-text) !important; }
+html.cmsv-pro .app-main .card .card { background: var(--cv-surface-2) !important; }
+html.cmsv-pro .app-main .list-group-item { background: transparent !important; border-color: var(--cv-border) !important; color: var(--cv-text); }
+html.cmsv-pro .app-main .widget-chart { background: var(--cv-surface-2) !important; }
+html.cmsv-pro .app-main .widget-numbers { color: var(--cv-text) !important; }
+html.cmsv-pro .app-main .icon-wrapper-bg { opacity: .15 !important; }
+
+/* ---------- Tables (the CMS uses GridViews everywhere) ---------- */
+html.cmsv-pro .app-main .table {
+  --bs-table-bg: transparent; --bs-table-color: var(--cv-text); --bs-table-striped-bg: transparent;
+  --bs-table-striped-color: var(--cv-text); --bs-table-hover-bg: var(--cv-surface-2); --bs-table-hover-color: var(--cv-text);
+  color: var(--cv-text) !important;
+  border-collapse: separate !important; border-spacing: 0;
+  border: 1px solid var(--cv-border) !important; border-radius: 12px; overflow: hidden;
+  background: transparent !important;
+}
+html.cmsv-pro .app-main .table > :not(caption) > * > *,
+html.cmsv-pro .app-main .table th,
+html.cmsv-pro .app-main .table td {
+  background: transparent !important; box-shadow: none !important;
+  border: 0 !important; border-bottom: 1px solid var(--cv-border) !important;
+  color: var(--cv-text) !important; padding: 10px 14px !important; vertical-align: middle !important;
+}
+html.cmsv-pro .app-main .table tr:last-child > td { border-bottom: 0 !important; }
+html.cmsv-pro .app-main .table th,
+html.cmsv-pro .app-main .table tr:first-child > th {
+  background: var(--cv-surface-2) !important;
+  color: var(--cv-muted) !important;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+}
+html.cmsv-pro .app-main .table-striped tbody tr:nth-of-type(odd),
+html.cmsv-pro .app-main .table-striped > tbody > tr:nth-of-type(odd) > * { background: color-mix(in srgb, var(--cv-surface-2) 55%, transparent) !important; }
+html.cmsv-pro .app-main .table-hover tbody tr:hover > * { background: var(--cv-surface-3) !important; }
+
+/* ---------- Buttons ---------- */
+html.cmsv-pro .app-main .btn {
+  border-radius: 9px !important; font-weight: 600; box-shadow: none !important;
+  transition: filter .15s, background .15s, border-color .15s, color .15s;
+}
+html.cmsv-pro .app-main .btn-primary,
+html.cmsv-pro .app-main input.btn-danger.course-text,
+html.cmsv-pro .app-main .btn-dark {
+  background: var(--cv-accent) !important; border-color: var(--cv-accent) !important; color: var(--cv-accent-text) !important;
+}
+html.cmsv-pro .app-main .btn-primary:hover,
+html.cmsv-pro .app-main input.btn-danger.course-text:hover { filter: brightness(1.08); }
+html.cmsv-pro .app-main .btn-secondary,
+html.cmsv-pro .app-main .btn-light,
+html.cmsv-pro .app-main .btn-outline-primary,
+html.cmsv-pro .app-main .btn-outline-secondary {
+  background: var(--cv-surface-2) !important; border: 1px solid var(--cv-border) !important; color: var(--cv-text) !important;
+}
+html.cmsv-pro .app-main .btn-danger:not(.course-text),
+html.cmsv-pro .app-main .btn-outline-danger { background: color-mix(in srgb, var(--cv-c-red) 14%, transparent) !important; border-color: transparent !important; color: var(--cv-c-red) !important; }
+html.cmsv-pro .app-main .btn-success { background: color-mix(in srgb, var(--cv-c-green) 16%, transparent) !important; border-color: transparent !important; color: var(--cv-c-green) !important; }
+html.cmsv-pro .app-main .btn-info { background: color-mix(in srgb, var(--cv-c-blue) 16%, transparent) !important; border-color: transparent !important; color: var(--cv-c-blue) !important; }
+html.cmsv-pro .app-main .btn-warning { background: color-mix(in srgb, var(--cv-c-amber) 18%, transparent) !important; border-color: transparent !important; color: var(--cv-c-amber) !important; }
+
+/* ---------- Forms ---------- */
+html.cmsv-pro .app-main .form-control,
+html.cmsv-pro .app-main .custom-select,
+html.cmsv-pro .app-main .form-select,
+html.cmsv-pro .app-main select,
+html.cmsv-pro .app-main textarea,
+html.cmsv-pro .app-main input[type="text"],
+html.cmsv-pro .app-main input[type="search"],
+html.cmsv-pro .app-main input[type="email"],
+html.cmsv-pro .app-main input[type="password"],
+html.cmsv-pro .app-main input[type="number"],
+html.cmsv-pro .app-main input[type="date"],
+html.cmsv-pro .modal .form-control,
+html.cmsv-pro .modal textarea,
+html.cmsv-pro .modal select {
+  background: var(--cv-surface-2) !important;
+  border: 1px solid var(--cv-border) !important;
+  border-radius: 9px !important;
+  color: var(--cv-text) !important;
+  box-shadow: none !important;
+}
+html.cmsv-pro .app-main .form-control:focus,
+html.cmsv-pro .app-main select:focus,
+html.cmsv-pro .app-main textarea:focus,
+html.cmsv-pro .modal .form-control:focus,
+html.cmsv-pro .modal textarea:focus { border-color: var(--cv-accent) !important; outline: none; }
+html.cmsv-pro .app-main .form-control::placeholder,
+html.cmsv-pro .modal .form-control::placeholder { color: var(--cv-faint) !important; }
+html.cmsv-pro .app-main label { color: var(--cv-text-2); }
+
+/* ---------- Tabs ---------- */
+html.cmsv-pro .app-main .nav-link { color: var(--cv-muted) !important; border-radius: 8px; }
+html.cmsv-pro .app-main .nav-link:hover { color: var(--cv-text) !important; }
+html.cmsv-pro .app-main .nav-link.active,
+html.cmsv-pro .app-main .nav-link.active span { color: var(--cv-accent) !important; background: transparent !important; }
+html.cmsv-pro .app-main .tabs-animated .nav-link::before { background: var(--cv-accent) !important; }
+html.cmsv-pro .app-main .tabs-animated .nav-link.active,
+html.cmsv-pro .app-main .tabs-animated .nav-link.active span { color: var(--cv-accent-text) !important; }
+html.cmsv-pro .app-main .nav-pills .nav-link.active { background: var(--cv-accent-soft) !important; }
+
+/* ---------- Timeline (notifications) ---------- */
+html.cmsv-pro .vertical-timeline::before { background: var(--cv-border) !important; }
+html.cmsv-pro .vertical-timeline-element-content .timeline-title { color: var(--cv-text) !important; font-size: 14px !important; font-weight: 600 !important; text-transform: none !important; }
+html.cmsv-pro .vertical-timeline-element-content p { color: var(--cv-muted) !important; }
+html.cmsv-pro .vertical-timeline-element-date { color: var(--cv-faint) !important; }
+html.cmsv-pro .vertical-timeline-element-icon .badge-dot-xl { box-shadow: 0 0 0 5px var(--cv-surface) !important; }
+
+/* ---------- Modals, dropdowns, alerts, pagination ---------- */
+html.cmsv-pro .modal-content {
+  background: var(--cv-surface) !important; color: var(--cv-text) !important;
+  border: 1px solid var(--cv-border) !important; border-radius: 16px !important; box-shadow: 0 30px 80px rgba(0, 0, 0, .4) !important;
+}
+html.cmsv-pro .modal-header, html.cmsv-pro .modal-footer { border-color: var(--cv-border) !important; background: transparent !important; }
+html.cmsv-pro .modal-title { color: var(--cv-text) !important; }
+html.cmsv-pro .modal .close, html.cmsv-pro .modal .btn-close { color: var(--cv-text) !important; text-shadow: none !important; opacity: .7; }
+html.cmsv-pro:not(.cmsv-light) .modal .btn-close { filter: invert(1); }
+html.cmsv-pro .modal-backdrop.show { opacity: .7 !important; background: #050507 !important; }
+html.cmsv-pro .dropdown-menu {
+  background: var(--cv-surface) !important; border: 1px solid var(--cv-border) !important;
+  border-radius: 12px !important; box-shadow: var(--cv-shadow) !important;
+}
+html.cmsv-pro .dropdown-item { color: var(--cv-text) !important; border-radius: 8px; }
+html.cmsv-pro .dropdown-item:hover { background: var(--cv-surface-2) !important; }
+html.cmsv-pro .alert { border-radius: 12px; border: 1px solid var(--cv-border); background: var(--cv-surface-2) !important; color: var(--cv-text) !important; }
+html.cmsv-pro .app-main .pagination .page-link,
+html.cmsv-pro .app-main .table tr[align] a,
+html.cmsv-pro .app-main .table tr[align] span {
+  background: var(--cv-surface-2) !important; border-color: var(--cv-border) !important; color: var(--cv-text) !important; border-radius: 6px; padding: 2px 8px;
+}
+html.cmsv-pro .badge { border-radius: 6px; }
+html.cmsv-pro .modalx { background-color: color-mix(in srgb, var(--cv-bg) 70%, transparent) !important; }
+html.cmsv-pro .app-drawer-wrapper { background: var(--cv-surface) !important; color: var(--cv-text) !important; border-left: 1px solid var(--cv-border); }
+html.cmsv-pro .app-drawer-wrapper .drawer-heading { color: var(--cv-faint) !important; background: transparent !important; border-color: var(--cv-border) !important; }
+html.cmsv-pro .app-footer, html.cmsv-pro .app-footer__inner { background: var(--cv-surface) !important; color: var(--cv-muted) !important; border-color: var(--cv-border) !important; }
