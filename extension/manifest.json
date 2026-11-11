@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GUC CMS Downloader",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Pro redesign of the GUC CMS and Outlook: renamed downloads, themes, search, cleaner mail with local-AI summaries.",
   "permissions": [
     "downloads",

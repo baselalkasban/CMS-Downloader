@@ -15,6 +15,11 @@ html.cmsm-skin:not(.cmsv-light) body { filter: invert(.92) hue-rotate(180deg); b
 html.cmsm-skin:not(.cmsv-light) body :is(img, video, canvas, picture, [style*="background-image"], .cmsm-chip, .cmsm-keep) { filter: invert(1) hue-rotate(180deg); }
 html.cmsm-skin:not(.cmsv-light) body .cmsm-chip { background: color-mix(in srgb, var(--cv-accent) 22%, var(--cv-surface)); color: var(--cv-accent); }
 
+/* Bolder text: thickens Outlook's thin fonts (typing areas keep their normal look). */
+html.cmsm-bold body { -webkit-text-stroke: .45px currentColor; }
+html.cmsm-bold body :is(input, textarea, [contenteditable="true"], [contenteditable=""]),
+html.cmsm-bold body :is(input, textarea, [contenteditable="true"], [contenteditable=""]) * { -webkit-text-stroke: 0; }
+
 /* Short subjects: the course/group tag that replaced "[Group: …]". */
 .cmsm-chip {
   display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 5px;

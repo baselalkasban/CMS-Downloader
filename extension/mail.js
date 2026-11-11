@@ -5,7 +5,7 @@
   if (window.top !== window) return; // Outlook embeds frames; run once, in the main page
   const U = CMSUI;
   const M = CMSMail;
-  const settings = { mailShowGroup: true, mailPanelOpen: true, mailSkin: true, aiAuto: true, aiModel: '' };
+  const settings = { mailShowGroup: true, mailPanelOpen: true, mailSkin: true, mailBold: true, aiAuto: true, aiModel: '' };
 
   // ---------- Short subjects everywhere ----------
 
@@ -537,8 +537,21 @@
   // Outlook in the extension's theme: dark themes repaint Outlook dark (see mail.css).
   const applySkin = () => {
     document.documentElement.classList.toggle('cmsm-skin', settings.mailSkin !== false);
+    document.documentElement.classList.toggle('cmsm-bold', settings.mailBold !== false);
+    boldFonts.disabled = settings.mailBold === false;
     keepDarkBars();
   };
+
+  // Outlook draws most text in the thin "Light"/"Semilight" Segoe UI cuts: map those names to the regular cut.
+  // This must come after Outlook's own font rules to win, so it's kept as the last <style> in <head>.
+  const boldFonts = document.createElement('style');
+  boldFonts.textContent = ['wf_segoe-ui_light', 'wf_segoe-ui_semilight', 'Segoe UI Light', 'Segoe UI Semilight', 'Segoe WP Light', 'Segoe WP Semilight']
+    .map((f) => `@font-face { font-family: "${f}"; src: local("Segoe UI"), local("SegoeUI"); }`)
+    .join('\n');
+  function keepFontsLast() {
+    const head = document.head || document.documentElement;
+    if (head.lastElementChild !== boldFonts) head.appendChild(boldFonts);
+  }
 
   // Outlook's top bar is already dark: mark it so the repaint leaves it dark.
   function keepDarkBars() {
@@ -557,6 +570,8 @@
 
   async function start() {
     Object.assign(settings, await chrome.storage.sync.get(settings));
+    keepFontsLast();
+    new MutationObserver(keepFontsLast).observe(document.head || document.documentElement, { childList: true });
     applySkin();
     await loadStore();
     fixSubtree(document.body);
@@ -575,8 +590,9 @@
       dropStaleChips();
     }
     if (changes.aiAuto) settings.aiAuto = changes.aiAuto.newValue;
-    if (changes.mailSkin) {
-      settings.mailSkin = changes.mailSkin.newValue;
+    if (changes.mailSkin || changes.mailBold) {
+      if (changes.mailSkin) settings.mailSkin = changes.mailSkin.newValue;
+      if (changes.mailBold) settings.mailBold = changes.mailBold.newValue;
       applySkin();
     }
   });
