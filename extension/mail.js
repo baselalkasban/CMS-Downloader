@@ -533,10 +533,13 @@
     scheduleRefresh();
   });
   addEventListener('resize', () => keepDarkBars());
+  addEventListener('hashchange', () => applySkin());
 
   // Outlook in the extension's theme: dark themes repaint Outlook dark (see mail.css).
   const applySkin = () => {
-    document.documentElement.classList.toggle('cmsm-skin', settings.mailSkin !== false);
+    // Attachments (PDFs, documents, pictures) keep their real colors: no repaint while one is previewed.
+    const viewingAttachment = /attachment/i.test(location.hash);
+    document.documentElement.classList.toggle('cmsm-skin', settings.mailSkin !== false && !viewingAttachment);
     document.documentElement.classList.toggle('cmsm-bold', settings.mailBold !== false);
     boldFonts.disabled = settings.mailBold === false;
     keepDarkBars();

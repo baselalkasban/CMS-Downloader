@@ -12,7 +12,7 @@ html.cmsm-open body {
    (hues are kept). Pictures and our own tags are flipped back to their real colors. */
 html.cmsm-skin:not(.cmsv-light) { background: #141414 !important; } /* stops the white body background reaching the page canvas unfiltered */
 html.cmsm-skin:not(.cmsv-light) body { filter: invert(.92) hue-rotate(180deg); background: #fff !important; min-height: 100vh; }
-html.cmsm-skin:not(.cmsv-light) body :is(img, video, canvas, picture, [style*="background-image"], .cmsm-chip, .cmsm-keep) { filter: invert(1) hue-rotate(180deg); }
+html.cmsm-skin:not(.cmsv-light) body :is(img, video, canvas, picture, iframe, embed, object, [style*="background-image"], .cmsm-chip, .cmsm-keep) { filter: invert(1) hue-rotate(180deg); }
 html.cmsm-skin:not(.cmsv-light) body .cmsm-chip { background: color-mix(in srgb, var(--cv-accent) 22%, var(--cv-surface)); color: var(--cv-accent); }
 
 /* Bolder text: thickens Outlook's thin fonts (typing areas keep their normal look). */

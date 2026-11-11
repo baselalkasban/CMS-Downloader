@@ -47,6 +47,7 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
     (the lines after the `-----` line), e.g. **Ms. Mai Adel Mohamed Ibrahim · Mathematics**, in the reading pane,
     and in the inbox list for emails you've opened at least once.
   - **Dark Outlook**: with a dark theme picked, Outlook is repainted dark to match (can be turned off in the popup).
+    Attachments and embedded documents always keep their real colors.
   - **Bolder text**: Outlook's thin fonts are drawn heavier so emails are easier to read (can be turned off in the popup).
   - **Mail assistant** panel (same themes as the CMS):
     - *Key details* pulled out of the email without AI: slots and rooms ("2nd slot · C5.212"), dates, times, deadlines and links.
