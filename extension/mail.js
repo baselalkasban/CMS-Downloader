@@ -5,7 +5,7 @@
   if (window.top !== window) return; // Outlook embeds frames; run once, in the main page
   const U = CMSUI;
   const M = CMSMail;
-  const settings = { mailShowGroup: true, mailPanelOpen: true, aiAuto: true, aiModel: '' };
+  const settings = { mailShowGroup: true, mailPanelOpen: true, mailSkin: true, aiAuto: true, aiModel: '' };
 
   // ---------- Short subjects everywhere ----------
 
@@ -51,83 +51,181 @@
   }
 
   // ---------- Reading the open message ----------
+  // Found by layout, not by Outlook's markup: the subject is the biggest text on the right of the screen,
+  // the sender and date sit just under it, and the body is the largest block of text below those.
 
   const visible = (el) => {
     const r = el.getBoundingClientRect();
-    return r.width > 40 && r.height > 10 && r.bottom > 0 && r.top < innerHeight;
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
   };
-  const BODY_SELECTORS = [
-    '[aria-label="Message body" i]',
-    '[aria-label="Message contents" i]',
-    'div[role="document"]',
-    '[id^="Item.MessageUniqueBody"]',
-    '[id^="Item.MessagePartBody"]',
-    '.ReadMsgBody',
-  ];
+  const fontSize = (el) => parseFloat(getComputedStyle(el).fontSize) || 0;
+  const LABELLED_BODY = '[aria-label="Message body" i], [aria-label="Message contents" i], div[role="document"], [id^="Item.MessageUniqueBody"], [id^="Item.MessagePartBody"]';
+  const DATE_RE = /\b(?:today|yesterday|mon|tue|wed|thu|fri|sat|sun)\w*\b[^\n]{0,20}\d{1,2}:\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4}/i;
 
-  function findBody() {
-    for (const sel of BODY_SELECTORS) {
-      for (const el of document.querySelectorAll(sel)) {
-        if (!el.closest('.cmsv') && visible(el) && el.innerText.trim().length > 2) return el;
-      }
+  // The reading pane's subject: a subject we shortened, or else the largest text right of the message list.
+  function findSubjectEl() {
+    const minLeft = innerWidth * 0.22;
+    const ours = [...document.querySelectorAll('[data-cmsm-subject]')].filter(
+      (el) => !el.closest('.cmsv') && visible(el) && el.getBoundingClientRect().left > minLeft && el.textContent.includes(el.dataset.cmsmTitle)
+    );
+    let best = null;
+    let bestSize = 0;
+    for (const el of ours) {
+      const size = fontSize(el);
+      if (size > bestSize) [best, bestSize] = [el, size];
     }
-    return null;
+    if (best && bestSize >= 16) return best;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const n = walker.currentNode;
+      const text = n.data.trim();
+      const el = n.parentElement;
+      if (text.length < 2 || text.length > 300 || !el || el.closest(SKIP)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.left < minLeft || r.top < 30 || r.top > innerHeight * 0.6 || !r.width) continue;
+      const size = fontSize(el);
+      if (size > bestSize + 0.5) [best, bestSize] = [el, size];
+    }
+    return bestSize >= 16 ? best : null;
   }
 
-  // The header (subject, sender, date) sits just above the body: the subject is its largest text.
-  function readHeader(body) {
-    const b = body.getBoundingClientRect();
-    let region = body;
-    for (let i = 0; i < 8 && region.parentElement; i++) {
-      region = region.parentElement;
-      if (region.getBoundingClientRect().top < b.top - 40) break;
+  function readByLayout() {
+    const subjectEl = findSubjectEl();
+    if (!subjectEl) return null;
+    const sr = subjectEl.getBoundingClientRect();
+    let pane = subjectEl;
+    while (pane.parentElement && pane !== document.body) {
+      pane = pane.parentElement;
+      const r = pane.getBoundingClientRect();
+      if (r.height > 260 && r.width > 320 && pane.textContent.length > subjectEl.textContent.length + 40) break;
     }
-    const lines = [];
-    const walker = document.createTreeWalker(region, NodeFilter.SHOW_TEXT);
+    // Header lines (sender, date) right under the subject.
+    const header = [];
+    const walker = document.createTreeWalker(pane, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const el = node.parentElement;
-      const text = node.data.trim();
-      if (!text || !el || body.contains(el) || el.closest('.cmsv, button, [role="button"], [role="menuitem"]')) continue;
+      const n = walker.currentNode;
+      const el = n.parentElement;
+      const text = n.data.trim();
+      if (!text || !el || el.closest(SKIP) || subjectEl.contains(el)) continue;
       const r = el.getBoundingClientRect();
-      if (r.bottom > b.top + 4 || r.top < b.top - 420 || r.right < b.left || r.width < 1) continue;
-      lines.push({ el, text, size: parseFloat(getComputedStyle(el).fontSize) || 0, top: r.top });
+      if (r.top < sr.top - 4 || r.top > sr.bottom + 140 || !r.width) continue;
+      header.push({ el, text, r });
     }
-    const subjectLine = [...lines].filter((l) => l.text.length > 2).sort((a, b2) => b2.size - a.size || a.top - b2.top)[0];
-    const holder = subjectLine?.el.closest('[data-cmsm-subject]');
-    const raw = holder && holder.textContent.includes(holder.dataset.cmsmTitle) ? holder.dataset.cmsmSubject : subjectLine?.text || '';
-    const fromLine = lines.find((l) => /@[\w.-]+\.\w+/.test(l.text) && l !== subjectLine);
-    const dateLine = lines.find((l) => /\b(?:today|yesterday|mon|tue|wed|thu|fri|sat|sun)\w*\b.*\d{1,2}:\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4}/i.test(l.text));
-    // The sender is often split into pieces (name, "<", address, ">"): read the whole line around the address.
-    const fromBlock = fromLine?.el.closest('div, p, li, td, span[title]') || fromLine?.el;
-    const fromText = (fromBlock?.innerText || fromLine?.text || '').split('\n').find((l) => l.includes('@')) || fromLine?.text || '';
-    // "GUC Notification System (DO NOT REPLY) <notify@guc.edu.eg>" -> name + address
-    const email = (/[\w.+-]+@[\w.-]+\.\w+/.exec(fromText) || [''])[0];
-    let name = fromText.replace(/<[^>]*>/, '').replace(email, '').trim();
-    if (!name) {
-      const near = lines.filter((l) => l !== subjectLine && l.top <= (fromLine?.top ?? 0) && !/@/.test(l.text)).pop();
-      name = near?.text || '';
+    // Only short lines near the sender's address count: a body may also contain times and addresses.
+    const short = header.filter((h) => h.text.length < 90);
+    const fromTop = short.find((h) => /@[\w.-]+\.\w+/.test(h.text))?.r.top ?? sr.bottom;
+    const headerLines = short.filter((h) => h.r.top < fromTop + 50);
+    const headerBottom = Math.max(sr.bottom, ...headerLines.filter((h) => /@|\d{1,2}:\d{2}/.test(h.text)).map((h) => h.r.bottom));
+    // Body: the element below the header holding the most text.
+    let body = null;
+    let most = 0;
+    for (const el of pane.querySelectorAll('div, td, article, section')) {
+      if (el.contains(subjectEl) || el.closest(SKIP)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top < headerBottom - 2 || r.height < 12 || r.width < 120) continue;
+      const len = el.textContent.trim().length;
+      if (len > most) [body, most] = [el, len];
     }
-    return { raw, from: name || email, email, date: dateLine?.text || '' };
+    if (!body) return null;
+    return { subjectEl, body, header: headerLines };
   }
 
   function readOpenMessage() {
-    const body = findBody();
-    if (!body) return null;
-    const head = readHeader(body);
+    let found = null;
+    const labelled = [...document.querySelectorAll(LABELLED_BODY)].find((el) => !el.closest('.cmsv') && visible(el) && el.innerText.trim());
+    found = readByLayout();
+    if (labelled && (!found || !found.body.contains(labelled))) found = found ? { ...found, body: labelled } : null;
+    if (!found) return null;
+    const { subjectEl, body, header } = found;
+    // Our saved original subject only counts while the element still shows it (Outlook reuses elements).
+    const holder = subjectEl.closest('[data-cmsm-subject]');
+    const ownText = [...subjectEl.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.data).join('').replace(/\s+/g, ' ').trim();
+    const raw = holder && holder.textContent.includes(holder.dataset.cmsmTitle) ? holder.dataset.cmsmSubject : ownText || subjectEl.textContent.replace(/\s+/g, ' ').trim();
     const text = body.innerText.replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').trim();
-    const subject = M.cleanSubject(head.raw);
+    // "GUC Notification System (DO NOT REPLY) <notify@guc.edu.eg>" is often split into pieces: read whole lines.
+    const fromLine = header.find((h) => /@[\w.-]+\.\w+/.test(h.text));
+    const fromBlockText = (fromLine?.el.closest('div, p, li, td, span[title]') || fromLine?.el)?.innerText || '';
+    const fromText = fromBlockText.split('\n').find((l) => l.includes('@')) || fromLine?.text || '';
+    const email = (/[\w.+-]+@[\w.-]+\.\w+/.exec(fromText) || [''])[0];
+    let from = fromText.replace(/<[^>]*>/, '').replace(email, '').trim();
+    if (!from) from = header.find((h) => h !== fromLine && !DATE_RE.test(h.text) && !/@/.test(h.text) && h.text.length > 3)?.text || email;
+    const date = header.find((h) => DATE_RE.test(h.text))?.text || '';
+    const subject = M.cleanSubject(raw);
+    const person = M.isSystemSender(from, email) ? M.signature(text) : null;
     return {
-      key: M.messageKey(head.raw, head.email || head.from, text),
-      raw: head.raw,
+      key: M.messageKey(raw, email || from, text),
+      raw,
       title: subject.title || '(no subject)',
       group: subject.group,
       fullGroup: subject.fullGroup,
-      from: head.from,
-      email: head.email,
-      date: head.date,
+      from: person ? person.label : from,
+      // Once relabelled, the page shows the signer, so name the system sender explicitly.
+      systemFrom: person ? (M.isSystemSender(from, '') ? from : 'GUC Notification System') : null,
+      person,
+      email,
+      date,
       text,
+      header,
     };
+  }
+
+  // Fallback when the email can't be found on the page: the text the user selected.
+  function readSelection() {
+    const text = String(getSelection() || '').trim();
+    if (text.length < 20) return null;
+    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+    const subject = M.cleanSubject(lines[0]);
+    const person = M.signature(text);
+    return { key: M.messageKey(lines[0], '', text), raw: lines[0], title: subject.title, group: subject.group, fullGroup: subject.fullGroup, from: person?.label || '', email: '', date: '', text, header: [], person };
+  }
+
+  // ---------- Real senders for "GUC Notification System" emails ----------
+  // Those emails are signed by the actual sender after a "-----" line; show that person instead.
+
+  let senders = {}; // raw subject -> person label, learned from emails that were opened
+  const senderNodes = new Map(); // text node -> original text, for nodes we relabelled
+
+  function relabel(node, label) {
+    if (!senderNodes.has(node)) senderNodes.set(node, node.data);
+    if (node.data !== label) node.data = label;
+  }
+
+  // Reading pane: replace the system name next to the address with the signer.
+  function relabelHeader(msg) {
+    if (!msg?.person) return;
+    for (const h of msg.header) {
+      const n = [...h.el.childNodes].find((c) => c.nodeType === Node.TEXT_NODE && (/notification system/i.test(c.data) || senderNodes.has(c)));
+      if (n) relabel(n, msg.person.label);
+    }
+  }
+
+  // Message list: rows show the system name; use the signer learned when that email was opened.
+  function relabelList() {
+    for (const [node, original] of senderNodes) if (!node.isConnected) senderNodes.delete(node);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (/notification system/i.test(n.data) || senderNodes.has(n) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP),
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      if (node.parentElement?.closest(SKIP)) continue;
+      if (current?.header.some((h) => h.el.contains(node))) continue; // reading pane handled above
+      let row = node.parentElement;
+      let subjectEl = null;
+      for (let i = 0; i < 7 && row && !subjectEl; i++, row = row.parentElement) subjectEl = row.querySelector('[data-cmsm-subject]');
+      const raw = subjectEl?.textContent.includes(subjectEl.dataset.cmsmTitle) ? subjectEl.dataset.cmsmSubject : null;
+      const label = raw && senders[raw];
+      if (label) relabel(node, M.shortPerson(label));
+      else if (senderNodes.has(node) && node.data !== senderNodes.get(node)) node.data = senderNodes.get(node); // row reused for another email
+    }
+  }
+
+  function learnSender(msg) {
+    if (!msg?.person || senders[msg.raw] === msg.person.label) return;
+    senders[msg.raw] = msg.person.label;
+    const keys = Object.keys(senders);
+    if (keys.length > 500) delete senders[keys[0]];
+    chrome.storage.local.set({ mailSenders: senders });
   }
 
   // ---------- Storage: favorites and cached summaries ----------
@@ -136,7 +234,7 @@
   let summaries = {}; // key -> AI summary
 
   async function loadStore() {
-    ({ mailFavorites: favorites = {}, mailSummaries: summaries = {} } = await chrome.storage.local.get(['mailFavorites', 'mailSummaries']));
+    ({ mailFavorites: favorites = {}, mailSummaries: summaries = {}, mailSenders: senders = {} } = await chrome.storage.local.get(['mailFavorites', 'mailSummaries', 'mailSenders']));
   }
   function saveSummaries() {
     const keys = Object.keys(summaries);
@@ -227,7 +325,9 @@
   function renderEmail() {
     const pane = panel.querySelector('[data-pane="email"]');
     if (!current) {
-      pane.innerHTML = `<div class="cmsm-empty">${ICON.spark}<p>Open an email to see its key details and an AI summary here.</p></div>`;
+      pane.innerHTML = `<div class="cmsm-empty">${ICON.spark}<p>Open an email to see its key details and an AI summary here.</p>
+        <p class="cmsm-hint">Not picked up? Select the email's text, then click:</p>
+        <button type="button" class="cmsv-btn cmsv-btn-ghost cmsv-btn-sm" data-act="use-selection">Use selected text</button></div>`;
       return;
     }
     const m = current;
@@ -269,7 +369,8 @@
         </div>
         <div class="cmsm-meta">
           ${m.group ? `<span class="cmsm-chip" title="${U.esc(m.fullGroup)}">${U.esc(m.group)}</span>` : ''}
-          ${m.from ? `<span>${U.esc(m.from)}</span>` : ''}${m.date ? `<span>${U.esc(m.date)}</span>` : ''}
+          ${m.from ? `<span class="cmsm-from">${U.esc(m.from)}</span>` : ''}${m.date ? `<span>${U.esc(m.date)}</span>` : ''}
+          ${m.systemFrom ? `<span class="cmsm-via">via ${U.esc(m.systemFrom.replace(/\s*\(do not reply\)/i, ''))}</span>` : ''}
         </div>
       </div>
       ${
@@ -359,6 +460,14 @@
     switch (el.dataset.act) {
       case 'close':
         return setOpen(false);
+      case 'use-selection': {
+        const msg = readSelection();
+        if (!msg) return U.toast('Select the email text first (at least a sentence).');
+        current = { ...msg, fromSelection: true };
+        render();
+        if (settings.aiAuto && !summaries[current.key]) summarize(current);
+        return;
+      }
       case 'fav':
         return current && toggleFavorite(current);
       case 'summarize':
@@ -394,9 +503,16 @@
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => {
-      const msg = readOpenMessage();
+      const found = readOpenMessage();
+      // Keep a message picked from the selection until a real one is found on the page.
+      const msg = found || (current?.fromSelection ? current : null);
       const changed = (msg?.key || null) !== (current?.key || null);
       current = msg;
+      if (msg && !msg.fromSelection) {
+        learnSender(msg);
+        relabelHeader(msg);
+      }
+      relabelList();
       if (!changed) return;
       if (msg && summaries[msg.key]) Object.assign(ai, { key: msg.key, state: 'done' });
       render();
@@ -416,9 +532,32 @@
     dropStaleChips();
     scheduleRefresh();
   });
+  addEventListener('resize', () => keepDarkBars());
+
+  // Outlook in the extension's theme: dark themes repaint Outlook dark (see mail.css).
+  const applySkin = () => {
+    document.documentElement.classList.toggle('cmsm-skin', settings.mailSkin !== false);
+    keepDarkBars();
+  };
+
+  // Outlook's top bar is already dark: mark it so the repaint leaves it dark.
+  function keepDarkBars() {
+    const luminance = (el) => {
+      const m = /rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?/.exec(getComputedStyle(el).backgroundColor);
+      return m && (m[4] === undefined || +m[4] > 0.5) ? (0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) / 255 : null;
+    };
+    for (const el of document.elementsFromPoint(innerWidth / 3, 12)) {
+      if (el === document.body || el === document.documentElement || el.closest('.cmsv')) continue;
+      const lum = luminance(el);
+      if (lum === null) continue;
+      if (lum < 0.25 && el.getBoundingClientRect().width > innerWidth * 0.4) el.classList.add('cmsm-keep');
+      break;
+    }
+  }
 
   async function start() {
     Object.assign(settings, await chrome.storage.sync.get(settings));
+    applySkin();
     await loadStore();
     fixSubtree(document.body);
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
@@ -426,6 +565,7 @@
     document.documentElement.append(panel, launcher);
     setOpen(settings.mailPanelOpen);
     scheduleRefresh();
+    setTimeout(keepDarkBars, 1500); // Outlook builds its header after load
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -435,6 +575,10 @@
       dropStaleChips();
     }
     if (changes.aiAuto) settings.aiAuto = changes.aiAuto.newValue;
+    if (changes.mailSkin) {
+      settings.mailSkin = changes.mailSkin.newValue;
+      applySkin();
+    }
   });
 
   start();

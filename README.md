@@ -43,6 +43,10 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
 - **Outlook mail (mail.guc.edu.eg)**:
   - **Short subjects**: `[EXTERNAL EMAIL] - Notification System: Tomorrows Math 501 tutorial [Group: Winter 2026 - MATH 501 - 5MET27 (Tutorial)]`
     becomes **Tomorrows Math 501 tutorial** with a small `MATH 501 · 5MET27 (Tutorial)` tag (the tag can be turned off in the popup).
+  - **Real senders**: emails from "GUC Notification System (DO NOT REPLY)" show the person who signed them
+    (the lines after the `-----` line), e.g. **Ms. Mai Adel Mohamed Ibrahim · Mathematics**, in the reading pane,
+    and in the inbox list for emails you've opened at least once.
+  - **Dark Outlook**: with a dark theme picked, Outlook is repainted dark to match (can be turned off in the popup).
   - **Mail assistant** panel (same themes as the CMS):
     - *Key details* pulled out of the email without AI: slots and rooms ("2nd slot · C5.212"), dates, times, deadlines and links.
     - *AI summary* from an AI running **on your own computer**: a one-line summary, when, where, what to do, and key points.

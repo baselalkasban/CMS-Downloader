@@ -82,5 +82,33 @@ var CMSMail = (() => {
     return h.toString(36);
   }
 
-  return { cleanSubject, isNoisy, extractFacts, messageKey };
+  // Automated senders that sign the real author at the bottom of the email.
+  const isSystemSender = (name, email) =>
+    /notification\s+system|do\s+not\s+reply|no-?reply/i.test(name || '') || /^(?:notify|noreply|no-reply|donotreply)@/i.test(email || '');
+
+  // The signer of an email: the lines after the last "-----" line, e.g.
+  // "Ms. Mai Adel Mohamed Ibrahim" + "Department: Mathematics" -> "Ms. Mai Adel Mohamed Ibrahim · Mathematics".
+  function signature(text) {
+    const lines = String(text || '').split('\n').map((l) => l.trim()).filter(Boolean);
+    const sep = lines.map((l) => /^[-_=*~]{4,}$/.test(l)).lastIndexOf(true);
+    let sig = [];
+    if (sep >= 0 && sep < lines.length - 1) sig = lines.slice(sep + 1, sep + 3);
+    else {
+      const i = lines.findIndex((l, k) => k >= lines.length - 5 && /^(?:dr|prof|eng|mr|mrs|ms|miss)\.?\s+\S/i.test(l));
+      if (i >= 0) sig = lines.slice(i, i + 2);
+    }
+    sig = sig.filter((l) => l.length <= 90);
+    if (!sig.length || /^(?:thank|regards|best|sincerely)/i.test(sig[0])) return null;
+    const name = sig[0].replace(/[,.]$/, '');
+    const role =
+      sig[1] && /department|dept|faculty|instructor|lecturer|teaching|assistant|professor|coordinator|office|unit/i.test(sig[1])
+        ? sig[1].replace(/^(?:department|dept)\.?\s*(?:of|[:\-–])\s*/i, '').trim()
+        : null;
+    return { name, role, label: role ? `${name} · ${role}` : name };
+  }
+
+  // In narrow places (the message list) the name alone.
+  const shortPerson = (label) => String(label || '').split(' · ')[0];
+
+  return { cleanSubject, isNoisy, extractFacts, messageKey, isSystemSender, signature, shortPerson };
 })();

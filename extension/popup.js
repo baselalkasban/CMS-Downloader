@@ -85,7 +85,7 @@ chrome.storage.sync.get({ theme: CMSThemes[0].id }).then(({ theme }) => {
 });
 
 // Outlook and local AI settings.
-const MAIL_AI_DEFAULTS = { mailShowGroup: true, aiUrl: 'http://localhost:11434', aiModel: '', aiAuto: true };
+const MAIL_AI_DEFAULTS = { mailShowGroup: true, mailSkin: true, aiUrl: 'http://localhost:11434', aiModel: '', aiAuto: true };
 const aiStatus = document.getElementById('aiStatus');
 const aiModel = document.getElementById('aiModel');
 
@@ -107,10 +107,11 @@ async function testAi() {
 
 chrome.storage.sync.get(MAIL_AI_DEFAULTS).then((s) => {
   document.getElementById('mailShowGroup').checked = s.mailShowGroup;
+  document.getElementById('mailSkin').checked = s.mailSkin;
   document.getElementById('aiUrl').value = s.aiUrl;
   document.getElementById('aiAuto').checked = s.aiAuto;
   if (s.aiModel) aiModel.innerHTML += `<option selected>${s.aiModel.replace(/[<&]/g, '')}</option>`;
-  for (const id of ['mailShowGroup', 'aiAuto']) {
+  for (const id of ['mailShowGroup', 'mailSkin', 'aiAuto']) {
     document.getElementById(id).addEventListener('change', (e) => chrome.storage.sync.set({ [id]: e.target.checked }));
   }
   document.getElementById('aiUrl').addEventListener('change', (e) => chrome.storage.sync.set({ aiUrl: e.target.value.trim() || MAIL_AI_DEFAULTS.aiUrl }));
