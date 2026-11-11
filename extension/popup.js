@@ -83,3 +83,37 @@ chrome.storage.sync.get({ theme: CMSThemes[0].id }).then(({ theme }) => {
     themesBox.appendChild(b);
   }
 });
+
+// Outlook and local AI settings.
+const MAIL_AI_DEFAULTS = { mailShowGroup: true, aiUrl: 'http://localhost:11434', aiModel: '', aiAuto: true };
+const aiStatus = document.getElementById('aiStatus');
+const aiModel = document.getElementById('aiModel');
+
+function setStatus(text, kind = '') {
+  aiStatus.textContent = text;
+  aiStatus.className = `hint ${kind}`;
+}
+
+async function testAi() {
+  setStatus('Connecting…');
+  await chrome.storage.sync.set({ aiUrl: document.getElementById('aiUrl').value.trim() || MAIL_AI_DEFAULTS.aiUrl });
+  const res = await chrome.runtime.sendMessage({ type: 'ai-models' }).catch((e) => ({ ok: false, error: e.message }));
+  if (!res?.ok) return setStatus(res?.error || 'Could not connect.', 'err');
+  const chosen = aiModel.value;
+  aiModel.innerHTML = '<option value="">Automatic (first installed model)</option>' + res.result.map((m) => `<option>${m.replace(/[<&]/g, '')}</option>`).join('');
+  aiModel.value = res.result.includes(chosen) ? chosen : '';
+  setStatus(res.result.length ? `Connected. ${res.result.length} model${res.result.length === 1 ? '' : 's'} found.` : 'Connected, but no models are installed. In Ollama run: ollama pull llama3.2', res.result.length ? 'ok' : 'err');
+}
+
+chrome.storage.sync.get(MAIL_AI_DEFAULTS).then((s) => {
+  document.getElementById('mailShowGroup').checked = s.mailShowGroup;
+  document.getElementById('aiUrl').value = s.aiUrl;
+  document.getElementById('aiAuto').checked = s.aiAuto;
+  if (s.aiModel) aiModel.innerHTML += `<option selected>${s.aiModel.replace(/[<&]/g, '')}</option>`;
+  for (const id of ['mailShowGroup', 'aiAuto']) {
+    document.getElementById(id).addEventListener('change', (e) => chrome.storage.sync.set({ [id]: e.target.checked }));
+  }
+  document.getElementById('aiUrl').addEventListener('change', (e) => chrome.storage.sync.set({ aiUrl: e.target.value.trim() || MAIL_AI_DEFAULTS.aiUrl }));
+  aiModel.addEventListener('change', () => chrome.storage.sync.set({ aiModel: aiModel.value }));
+  document.getElementById('aiTest').addEventListener('click', testAi);
+});

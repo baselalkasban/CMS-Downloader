@@ -40,6 +40,24 @@ A Chrome extension for the GUC CMS that makes downloading course content easy.
       the course announcement at the top, a course switcher and a link to the course's group chat.
 - In *Classic view*, course pages get a filter bar (type, week, search) instead.
 
+- **Outlook mail (mail.guc.edu.eg)**:
+  - **Short subjects**: `[EXTERNAL EMAIL] - Notification System: Tomorrows Math 501 tutorial [Group: Winter 2026 - MATH 501 - 5MET27 (Tutorial)]`
+    becomes **Tomorrows Math 501 tutorial** with a small `MATH 501 · 5MET27 (Tutorial)` tag (the tag can be turned off in the popup).
+  - **Mail assistant** panel (same themes as the CMS):
+    - *Key details* pulled out of the email without AI: slots and rooms ("2nd slot · C5.212"), dates, times, deadlines and links.
+    - *AI summary* from an AI running **on your own computer**: a one-line summary, when, where, what to do, and key points.
+      The email never leaves your device.
+    - *Favorites*: star an email to keep it with its summary and full text; search them and jump back to them in Outlook.
+
+## Local AI for mail summaries
+1. Install [Ollama](https://ollama.com/download) (or [LM Studio](https://lmstudio.ai) and start its local server).
+2. Download a model, e.g. in a terminal: `ollama pull llama3.2` (small and fast) or `ollama pull qwen2.5:7b` (better summaries, needs more memory).
+3. In the extension popup, under *Local AI*, click **Test**, then pick the model.
+   Ollama's address is `http://localhost:11434`; LM Studio's is `http://localhost:1234`.
+
+No extra Ollama configuration is needed: the extension sends its requests without the browser-extension
+origin that Ollama would otherwise refuse.
+
 ## Install
 1. Download this repository (green **Code** button → *Download ZIP*) and unzip it somewhere permanent,
    e.g. `Documents\CMS-Downloader`. Chrome loads the extension from this folder, so don't delete it.

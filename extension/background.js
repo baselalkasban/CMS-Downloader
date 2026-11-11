@@ -1,4 +1,4 @@
-importScripts('lib/naming.js');
+importScripts('lib/naming.js', 'ai.js');
 
 const N = CMSNaming;
 const PENDING_TTL_MS = 60_000;

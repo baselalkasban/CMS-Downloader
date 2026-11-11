@@ -16,6 +16,12 @@
     .footer button:hover { border-color: #888; }
     #update { margin-top: 8px; padding: 8px; border-radius: 4px; background: #3a2f05; color: #f5d36b; font-size: 11px; }
     #update[hidden] { display: none; }
+    .row { display: flex; gap: 6px; }
+    .row input { flex: 1; }
+    .row button { padding: 0 12px; border: 1px solid #555; border-radius: 4px; background: #2a2a2a; color: #eee; font: inherit; cursor: pointer; }
+    .row button:hover { border-color: #f5b301; }
+    select { width: 100%; padding: 6px; border: 1px solid #555; border-radius: 4px; background: #2a2a2a; color: #eee; font: inherit; }
+    #aiStatus.ok { color: #4ade80; } #aiStatus.err { color: #f87171; }
     h2 { margin: 14px 0 8px; color: #999; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
     .themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .theme { display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid transparent; border-radius: 8px; background: none; color: #ccc; font: 10.5px/1.2 system-ui, sans-serif; cursor: pointer; text-align: center; }
@@ -37,6 +43,16 @@
   <label class="check"><input type="checkbox" id="keepCourseCode" /> Keep course code in folder name</label>
   <label class="check"><input type="checkbox" id="keepItemNumber" /> Keep item number in file name</label>
   <div class="preview" id="preview"></div>
+  <h2>Outlook mail</h2>
+  <label class="check"><input type="checkbox" id="mailShowGroup" /> Show the course tag after short subjects</label>
+  <h2>Local AI (mail summaries)</h2>
+  <label for="aiUrl" style="margin-top:0">Server address</label>
+  <div class="row"><input type="text" id="aiUrl" placeholder="http://localhost:11434" /><button type="button" id="aiTest">Test</button></div>
+  <div class="hint">Ollama: http://localhost:11434 · LM Studio: http://localhost:1234</div>
+  <label for="aiModel">Model</label>
+  <select id="aiModel"><option value="">Automatic (first installed model)</option></select>
+  <label class="check"><input type="checkbox" id="aiAuto" /> Summarize emails automatically when opened</label>
+  <div class="hint" id="aiStatus"></div>
   <div id="saved"></div>
   <div id="update" hidden></div>
   <div class="footer">

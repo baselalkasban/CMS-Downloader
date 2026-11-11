@@ -1,14 +1,18 @@
 {
   "manifest_version": 3,
   "name": "GUC CMS Downloader",
-  "version": "1.5.0",
-  "description": "Renames GUC CMS downloads to their content title and sorts them into a folder per course.",
+  "version": "1.6.0",
+  "description": "Pro redesign of the GUC CMS and Outlook: renamed downloads, themes, search, cleaner mail with local-AI summaries.",
   "permissions": [
     "downloads",
-    "storage"
+    "storage",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
-    "https://cms.guc.edu.eg/*"
+    "https://cms.guc.edu.eg/*",
+    "https://mail.guc.edu.eg/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -61,6 +65,32 @@
       ],
       "js": [
         "home-view.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://mail.guc.edu.eg/owa/*"
+      ],
+      "js": [
+        "lib/themes.js",
+        "theme.js"
+      ],
+      "css": [
+        "themes.css",
+        "view.css",
+        "mail.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://mail.guc.edu.eg/owa/*"
+      ],
+      "js": [
+        "lib/ui.js",
+        "lib/mailtext.js",
+        "mail.js"
       ],
       "run_at": "document_idle"
     }
